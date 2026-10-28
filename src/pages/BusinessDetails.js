@@ -41,7 +41,7 @@ const BusinessDetails = () => {
   const [loading, setLoading] = useState(false);
   const [loadingBusiness, setLoadingBusiness] = useState(true);
   const [error, setError] = useState("");
-  // const [logo, setLogo] = useState(null);
+  const [logo, setLogo] = useState(null);
   const [preview, setPreview] = useState("");
 
   const [formData, setFormData] = useState({
@@ -198,19 +198,19 @@ const BusinessDetails = () => {
     try {
       setLoading(true);
 
-      await API.post("/business", {
-        businessName,
-        ownerName,
-        mobile,
-        email,
-        address,
-        gstNumber,
-        panNumber,
-        businessType,
-        state,
-        invoicePrefix: invoicePrefix || "INV",
-        logo: "",
-      });
+     await API.post("/business", {
+  businessName,
+  ownerName,
+  mobile,
+  email,
+  address,
+  gstNumber,
+  panNumber,
+  businessType,
+  state,
+  invoicePrefix: invoicePrefix || "INV",
+  logo: "",
+});
 
       navigate("/dashboard", { replace: true });
     } catch (err) {
