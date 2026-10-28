@@ -13,11 +13,13 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 
 // APP
+
 import Dashboard from "./pages/dashboard/Dashboard";
-import Products from "./pages/products/Products";
+
 
 import Pricing from "./pages/public/Pricing";
-import Customers from "./pages/public/Customers";
+import DashboardLayout from "./pages/dashboard/DashboardLayout";
+import Customers from "./pages/customers/Customers";
 import SmallBusiness from "./components/solutions/SmallBusiness";
 import Retail from "./components/solutions/Retail";
 import BusinessServices from "./components/solutions/BusinessServices";
@@ -25,14 +27,16 @@ import Contact from "./components/public/Contact";
 import Features from "./components/public/Features";
 import FAQ from "./components/public/FAQ";
 // import InvoiceList from "./pages/billing/InvoiceList";
+import Invoices from "./pages/billing/Invoices";
 import CreateInvoice from "./pages/billing/CreateInvoice";
 import Reports from "./pages/reports/Reports";
-import Expenses from "./pages/expenses/Expenses";
+ import AdminPanel from "./pages/AdminPanel";
 import Subscription from "./pages/subscription/Subscription";
 import Settings from "./pages/settings/Settings";
 import BusinessDetails from "./pages/BusinessDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
-import TrialActivation from "./pages/TrialActivation";
+import Expenses from "./pages/expenses/Expenses";
+import Products from "./pages/products/Products";
 function App() {
   return (
     <BrowserRouter>
@@ -55,12 +59,9 @@ function App() {
   path="/business-details"
   element={<BusinessDetails />}
 />
-  <Route
-  path="/trial-activation"
-  element={<TrialActivation />}
-/>
+
         <Route path="/pricing" element={<Pricing />} />
-        <Route path="/customers" element={<Customers />} />
+      
         <Route path="/solutions/small-business" element={<SmallBusiness />} />
         <Route path="/solutions/retail" element={<Retail />} />
         <Route path="/solutions/business-services" element={<BusinessServices />} />
@@ -78,12 +79,18 @@ function App() {
         />
 
         {/* ================= PROTECTED APP ================= */}
-
+ <Route element={<DashboardLayout />}>
         <Route
           path="/dashboard"
           element={<Dashboard />}
         />
-
+  <Route
+  path="/products"
+  element={<Products />}
+/>
+  <Route path="/customers" element={<Customers />} />
+    <Route path="/expenses" element={<Expenses />} />
+  <Route path="/invoices" element={<Invoices />} />
         <Route
           path="/products"
           element={
@@ -103,12 +110,8 @@ function App() {
         />
 
         <Route
-          path="/invoices"
-          element={
-            <ProtectedRoute>
-              {/* <InvoiceList /> */}
-            </ProtectedRoute>
-          }
+          path="/billing/create"
+          element={<CreateInvoice />}
         />
 
         <Route
@@ -120,15 +123,15 @@ function App() {
           }
         />
 
-        <Route
-          path="/reports"
-          element={
-            <ProtectedRoute>
-              <Reports />
-            </ProtectedRoute>
-          }
-        />
+       <Route path="/reports" element={<Reports />} />
+     
 
+
+<Route path="/admin" element={<AdminPanel />} />
+
+// Inside your existing Routes:
+<Route path="/subscription" element={<Subscription />} />
+<Route path="/settings" element={<Settings />} />
         <Route
           path="/expenses"
           element={
@@ -138,23 +141,9 @@ function App() {
           }
         />
 
-        <Route
-          path="/subscription"
-          element={
-            <ProtectedRoute>
-              <Subscription />
-            </ProtectedRoute>
-          }
-        />
+       
 
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
+      
 
         {/* UNKNOWN URL */}
 
@@ -162,9 +151,9 @@ function App() {
           path="*"
           element={<Navigate to="/" replace />}
         />
-
+</Route>
       </Routes>
-
+ 
     </BrowserRouter>
   );
 }

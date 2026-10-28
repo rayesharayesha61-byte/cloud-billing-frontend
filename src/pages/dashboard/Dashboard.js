@@ -1,916 +1,1611 @@
-import React, { useState } from "react";
+// import React, { useEffect, useState } from "react";
+// import {
+//   Box,
+//   Grid,
+//   Paper,
+//   Typography,
+//   Button,
+//   TextField,
+//   MenuItem,
+//   CircularProgress,
+//   Chip,
+//   Avatar,
+//   Divider,
+//   Stack,
+// } from "@mui/material";
+// import {
+//   TrendingUpRounded,
+//   ReceiptLongRounded,
+//   AccountBalanceWalletRounded,
+//   PaymentsRounded,
+//   AddRounded,
+//   Inventory2Outlined,
+//   PersonAddAlt1Rounded,
+//   ArrowForwardRounded,
+//   CalendarMonthRounded,
+//   ReceiptOutlined,
+// } from "@mui/icons-material";
+// import {
+//   ResponsiveContainer,
+//   AreaChart,
+//   Area,
+//   CartesianGrid,
+//   XAxis,
+//   YAxis,
+//   Tooltip,
+// } from "recharts";
+// import API from "../../services/api";
 
+// const formatCurrency = (value) =>
+//   new Intl.NumberFormat("en-IN", {
+//     style: "currency",
+//     currency: "INR",
+//     maximumFractionDigits: 2,
+//   }).format(Number(value) || 0);
+
+// const getToday = () => {
+//   const date = new Date();
+//   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+//     2,
+//     "0"
+//   )}-${String(date.getDate()).padStart(2, "0")}`;
+// };
+
+// const Dashboard = () => {
+//   const [todaySummary, setTodaySummary] = useState({});
+//   const [summary, setSummary] = useState({});
+//   const [invoices, setInvoices] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [period, setPeriod] = useState("7");
+
+//   useEffect(() => {
+//     loadDashboard();
+//   }, []);
+
+//   const loadDashboard = async () => {
+//     setLoading(true);
+
+//     try {
+//       const today = getToday();
+
+//       const [todayResponse, summaryResponse, invoiceResponse] =
+//         await Promise.allSettled([
+//           API.get("/reports/summary", {
+//             params: { startDate: today, endDate: today },
+//           }),
+//           API.get("/reports/summary"),
+//           API.get("/invoices"),
+//         ]);
+
+//       if (todayResponse.status === "fulfilled") {
+//         setTodaySummary(todayResponse.value.data?.summary ||
+//           todayResponse.value.data || {});
+//       }
+
+//       if (summaryResponse.status === "fulfilled") {
+//         setSummary(summaryResponse.value.data?.summary ||
+//           summaryResponse.value.data || {});
+//       }
+
+//       if (invoiceResponse.status === "fulfilled") {
+//         const data = invoiceResponse.value.data;
+//         const invoiceList = Array.isArray(data)
+//           ? data
+//           : data?.invoices || data?.data || [];
+
+//         setInvoices(Array.isArray(invoiceList) ? invoiceList : []);
+//       }
+//     } catch (error) {
+//       console.error("Dashboard loading error:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const readNumber = (source, keys) => {
+//     for (const key of keys) {
+//       if (source?.[key] !== undefined && source?.[key] !== null) {
+//         return Number(source[key]) || 0;
+//       }
+//     }
+//     return 0;
+//   };
+
+//   const todaySales = readNumber(todaySummary, [
+//     "totalSales",
+//     "todaySales",
+//     "total_sales",
+//     "sales",
+//     "grandTotal",
+//   ]);
+
+//   const totalSales = readNumber(summary, [
+//     "totalSales",
+//     "total_sales",
+//     "sales",
+//     "grandTotal",
+//   ]);
+
+//   const totalInvoices = readNumber(summary, [
+//     "totalInvoices",
+//     "invoiceCount",
+//     "total_invoices",
+//     "invoice_count",
+//   ]);
+
+//   const outstanding = readNumber(summary, [
+//     "outstanding",
+//     "totalOutstanding",
+//     "outstandingAmount",
+//     "pendingAmount",
+//     "total_outstanding",
+//   ]);
+
+//   const chartData = React.useMemo(() => {
+//     const days = Number(period);
+//     const result = [];
+//     const now = new Date();
+
+//     for (let i = days - 1; i >= 0; i--) {
+//       const date = new Date(now);
+//       date.setDate(now.getDate() - i);
+
+//       result.push({
+//         date: date.toISOString().slice(0, 10),
+//         day: date.toLocaleDateString("en-IN", {
+//           day: "2-digit",
+//           month: "short",
+//         }),
+//         sales: 0,
+//       });
+//     }
+
+//     invoices.forEach((invoice) => {
+//       const invoiceDate = String(
+//         invoice.invoiceDate || invoice.invoice_date || invoice.created_at || ""
+//       ).slice(0, 10);
+
+//       const item = result.find((entry) => entry.date === invoiceDate);
+
+//       if (item) {
+//         item.sales += Number(
+//           invoice.grandTotal ??
+//           invoice.grand_total ??
+//           invoice.totalAmount ??
+//           invoice.total_amount ??
+//           invoice.total ??
+//           0
+//         );
+//       }
+//     });
+
+//     return result;
+//   }, [invoices, period]);
+
+//   const metrics = [
+//     {
+//       title: "Today's Sales",
+//       value: formatCurrency(todaySales),
+//       subtitle: "Sales recorded today",
+//       icon: <TrendingUpRounded />,
+//       color: "#2563eb",
+//       bg: "#eff6ff",
+//     },
+//     {
+//       title: "Total Sales",
+//       value: formatCurrency(totalSales),
+//       subtitle: "Sales in summary period",
+//       icon: <PaymentsRounded />,
+//       color: "#059669",
+//       bg: "#ecfdf5",
+//     },
+//     {
+//       title: "Total Invoices",
+//       value: totalInvoices.toLocaleString("en-IN"),
+//       subtitle: "Invoices in summary period",
+//       icon: <ReceiptLongRounded />,
+//       color: "#7c3aed",
+//       bg: "#f5f3ff",
+//     },
+//     {
+//       title: "Outstanding",
+//       value: formatCurrency(outstanding),
+//       subtitle: "Pending customer payments",
+//       icon: <AccountBalanceWalletRounded />,
+//       color: "#ea580c",
+//       bg: "#fff7ed",
+//     },
+//   ];
+
+//   const getInvoiceNumber = (invoice) =>
+//     invoice.invoiceNumber ||
+//     invoice.invoice_number ||
+//     invoice.invoiceNo ||
+//     invoice.invoice_no ||
+//     `INV-${invoice.id || ""}`;
+
+//   const getCustomerName = (invoice) =>
+//     invoice.customer_name ||
+//     invoice.customerName ||
+//     invoice.customer?.name ||
+//     invoice.customer?.customer_name ||
+//     "Customer";
+
+//   const getInvoiceAmount = (invoice) =>
+//     invoice.grandTotal ??
+//     invoice.grand_total ??
+//     invoice.totalAmount ??
+//     invoice.total_amount ??
+//     invoice.total ??
+//     0;
+
+//   const getStatus = (invoice) =>
+//     String(invoice.status || invoice.paymentStatus || invoice.payment_status || "Pending");
+
+//   const quickActions = [
+//     {
+//       title: "Create Invoice",
+//       description: "Create a new customer bill",
+//       icon: <ReceiptOutlined />,
+//       color: "#2563eb",
+//       path: "/billing",
+//     },
+//     {
+//       title: "Add Product",
+//       description: "Add products to your inventory",
+//       icon: <Inventory2Outlined />,
+//       color: "#059669",
+//       path: "/products",
+//     },
+//     {
+//       title: "Add Customer",
+//       description: "Manage your customer details",
+//       icon: <PersonAddAlt1Rounded />,
+//       color: "#7c3aed",
+//       path: "/customers",
+//     },
+//   ];
+
+//   if (loading) {
+//     return (
+//       <Box
+//         sx={{
+//           minHeight: "65vh",
+//           display: "flex",
+//           alignItems: "center",
+//           justifyContent: "center",
+//         }}
+//       >
+//         <CircularProgress />
+//       </Box>
+//     );
+//   }
+
+//   return (
+//     <Box
+//       sx={{
+//         width: "100%",
+//         maxWidth: "100%",
+//         minWidth: 0,
+//         p: { xs: 2, sm: 3, lg: 4 },
+//         bgcolor: "#f8fafc",
+//         boxSizing: "border-box",
+//       }}
+//     >
+//       {/* Dashboard heading */}
+//       <Stack
+//         direction={{ xs: "column", md: "row" }}
+//         justifyContent="space-between"
+//         alignItems={{ xs: "stretch", md: "center" }}
+//         spacing={2}
+//         sx={{ mb: 3 }}
+//       >
+//         <Box>
+//           <Typography
+//             variant="h4"
+//             sx={{
+//               fontWeight: 800,
+//               color: "#172554",
+//               letterSpacing: "-0.8px",
+//               fontSize: { xs: 25, md: 30 },
+//             }}
+//           >
+//             Dashboard
+//           </Typography>
+//           <Typography sx={{ color: "#64748b", mt: 0.7, fontSize: 14 }}>
+//             Here's what's happening with your business today.
+//           </Typography>
+//         </Box>
+
+//         <Stack direction="row" spacing={1.5}>
+//           <Chip
+//             icon={<CalendarMonthRounded />}
+//             label={new Date().toLocaleDateString("en-IN", {
+//               day: "2-digit",
+//               month: "short",
+//               year: "numeric",
+//             })}
+//             sx={{
+//               bgcolor: "#fff",
+//               border: "1px solid #e2e8f0",
+//               height: 42,
+//               fontWeight: 600,
+//               borderRadius: 2,
+//             }}
+//           />
+
+//           <Button
+//             variant="contained"
+//             startIcon={<AddRounded />}
+//             onClick={() => (window.location.href = "/billing")}
+//             sx={{
+//               bgcolor: "#2563eb",
+//               borderRadius: 2,
+//               px: 2.2,
+//               textTransform: "none",
+//               fontWeight: 700,
+//               boxShadow: "0 5px 14px rgba(37,99,235,0.20)",
+//               "&:hover": { bgcolor: "#1d4ed8" },
+//             }}
+//           >
+//             New Invoice
+//           </Button>
+//         </Stack>
+//       </Stack>
+
+//       {/* Summary cards */}
+//       <Grid container spacing={2.5}>
+//         {metrics.map((metric) => (
+//           <Grid item xs={12} sm={6} xl={3} key={metric.title}>
+//             <Paper
+//               elevation={0}
+//               sx={{
+//                 p: 2.5,
+//                 height: "100%",
+//                 borderRadius: 3,
+//                 border: "1px solid #e8edf5",
+//                 bgcolor: "#fff",
+//                 transition: "all .2s ease",
+//                 "&:hover": {
+//                   transform: "translateY(-3px)",
+//                   boxShadow: "0 12px 28px rgba(15,23,42,0.06)",
+//                 },
+//               }}
+//             >
+//               <Stack
+//                 direction="row"
+//                 alignItems="center"
+//                 justifyContent="space-between"
+//               >
+//                 <Typography sx={{ color: "#64748b", fontSize: 13, fontWeight: 600 }}>
+//                   {metric.title}
+//                 </Typography>
+//                 <Avatar
+//                   variant="rounded"
+//                   sx={{
+//                     width: 42,
+//                     height: 42,
+//                     bgcolor: metric.bg,
+//                     color: metric.color,
+//                     borderRadius: 2.5,
+//                   }}
+//                 >
+//                   {metric.icon}
+//                 </Avatar>
+//               </Stack>
+
+//               <Typography
+//                 sx={{
+//                   mt: 2.2,
+//                   fontSize: { xs: 23, md: 27 },
+//                   fontWeight: 800,
+//                   color: "#172554",
+//                   letterSpacing: "-0.7px",
+//                   overflowWrap: "anywhere",
+//                 }}
+//               >
+//                 {metric.value}
+//               </Typography>
+
+//               <Typography sx={{ mt: 0.8, fontSize: 12, color: "#94a3b8" }}>
+//                 {metric.subtitle}
+//               </Typography>
+//             </Paper>
+//           </Grid>
+//         ))}
+
+//         {/* Sales chart */}
+//         <Grid item xs={12} lg={8}>
+//           <Paper
+//             elevation={0}
+//             sx={{
+//               p: { xs: 2, sm: 3 },
+//               height: 390,
+//               borderRadius: 3,
+//               border: "1px solid #e8edf5",
+//               bgcolor: "#fff",
+//             }}
+//           >
+//             <Stack
+//               direction="row"
+//               justifyContent="space-between"
+//               alignItems="center"
+//               spacing={1}
+//               sx={{ mb: 1 }}
+//             >
+//               <Box>
+//                 <Typography sx={{ fontWeight: 800, fontSize: 17, color: "#172554" }}>
+//                   Sales Overview
+//                 </Typography>
+//                 <Typography sx={{ fontSize: 12, color: "#94a3b8", mt: 0.5 }}>
+//                   Invoice sales over time
+//                 </Typography>
+//               </Box>
+
+//               <TextField
+//                 select
+//                 size="small"
+//                 value={period}
+//                 onChange={(event) => setPeriod(event.target.value)}
+//                 sx={{
+//                   width: 125,
+//                   "& .MuiOutlinedInput-root": { borderRadius: 2, fontSize: 12 },
+//                 }}
+//               >
+//                 <MenuItem value="7">Last 7 days</MenuItem>
+//                 <MenuItem value="14">Last 14 days</MenuItem>
+//                 <MenuItem value="30">Last 30 days</MenuItem>
+//               </TextField>
+//             </Stack>
+
+//             <Box sx={{ width: "100%", height: 285, mt: 2 }}>
+//               <ResponsiveContainer width="100%" height="100%">
+//                 <AreaChart data={chartData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+//                   <defs>
+//                     <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+//                       <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.22} />
+//                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.01} />
+//                     </linearGradient>
+//                   </defs>
+
+//                   <CartesianGrid stroke="#edf2f7" strokeDasharray="4 4" vertical={false} />
+
+//                   <XAxis
+//                     dataKey="day"
+//                     axisLine={false}
+//                     tickLine={false}
+//                     tick={{ fill: "#94a3b8", fontSize: 11 }}
+//                     dy={10}
+//                     minTickGap={15}
+//                   />
+
+//                   <YAxis
+//                     axisLine={false}
+//                     tickLine={false}
+//                     tick={{ fill: "#94a3b8", fontSize: 11 }}
+//                     tickFormatter={(value) =>
+//                       value >= 1000 ? `₹${(value / 1000).toFixed(1)}k` : `₹${value}`
+//                     }
+//                     width={55}
+//                   />
+
+//                   <Tooltip
+//                     formatter={(value) => [formatCurrency(value), "Sales"]}
+//                     contentStyle={{
+//                       borderRadius: 12,
+//                       border: "1px solid #e2e8f0",
+//                       boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
+//                     }}
+//                   />
+
+//                   <Area
+//                     type="monotone"
+//                     dataKey="sales"
+//                     stroke="#2563eb"
+//                     strokeWidth={3}
+//                     fill="url(#salesGradient)"
+//                     activeDot={{ r: 5, strokeWidth: 0 }}
+//                   />
+//                 </AreaChart>
+//               </ResponsiveContainer>
+//             </Box>
+//           </Paper>
+//         </Grid>
+
+//         {/* Quick actions */}
+//         <Grid item xs={12} lg={4}>
+//           <Paper
+//             elevation={0}
+//             sx={{
+//               p: 3,
+//               height: 390,
+//               borderRadius: 3,
+//               border: "1px solid #e8edf5",
+//               bgcolor: "#fff",
+//             }}
+//           >
+//             <Typography sx={{ fontWeight: 800, fontSize: 17, color: "#172554" }}>
+//               Quick Actions
+//             </Typography>
+//             <Typography sx={{ fontSize: 12, color: "#94a3b8", mt: 0.5, mb: 2.5 }}>
+//               Manage your daily operations
+//             </Typography>
+
+//             <Stack spacing={1.5}>
+//               {quickActions.map((action) => (
+//                 <Box
+//                   key={action.title}
+//                   onClick={() => (window.location.href = action.path)}
+//                   sx={{
+//                     display: "flex",
+//                     alignItems: "center",
+//                     gap: 1.5,
+//                     p: 1.5,
+//                     borderRadius: 2.5,
+//                     cursor: "pointer",
+//                     border: "1px solid transparent",
+//                     transition: "all .2s ease",
+//                     "&:hover": {
+//                       bgcolor: "#f8fafc",
+//                       borderColor: "#e2e8f0",
+//                     },
+//                   }}
+//                 >
+//                   <Avatar
+//                     variant="rounded"
+//                     sx={{
+//                       width: 43,
+//                       height: 43,
+//                       bgcolor: `${action.color}12`,
+//                       color: action.color,
+//                       borderRadius: 2.5,
+//                     }}
+//                   >
+//                     {action.icon}
+//                   </Avatar>
+
+//                   <Box sx={{ flex: 1, minWidth: 0 }}>
+//                     <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>
+//                       {action.title}
+//                     </Typography>
+//                     <Typography sx={{ fontSize: 11, color: "#94a3b8", mt: 0.4 }}>
+//                       {action.description}
+//                     </Typography>
+//                   </Box>
+
+//                   <ArrowForwardRounded sx={{ fontSize: 17, color: "#94a3b8" }} />
+//                 </Box>
+//               ))}
+//             </Stack>
+
+//             <Divider sx={{ my: 2 }} />
+
+//             <Box
+//               sx={{
+//                 p: 2,
+//                 borderRadius: 2.5,
+//                 bgcolor: "#eff6ff",
+//                 border: "1px solid #dbeafe",
+//               }}
+//             >
+//               <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#1d4ed8" }}>
+//                 GST-Compliant Billing
+//               </Typography>
+//               <Typography sx={{ fontSize: 11, color: "#64748b", mt: 0.5, lineHeight: 1.6 }}>
+//                 Keep your invoices and business records organized in one place.
+//               </Typography>
+//             </Box>
+//           </Paper>
+//         </Grid>
+
+//         {/* Recent invoices */}
+//         <Grid item xs={12}>
+//           <Paper
+//             elevation={0}
+//             sx={{
+//               borderRadius: 3,
+//               border: "1px solid #e8edf5",
+//               bgcolor: "#fff",
+//               overflow: "hidden",
+//             }}
+//           >
+//             <Stack
+//               direction="row"
+//               justifyContent="space-between"
+//               alignItems="center"
+//               sx={{ p: { xs: 2, sm: 3 } }}
+//             >
+//               <Box>
+//                 <Typography sx={{ fontWeight: 800, fontSize: 17, color: "#172554" }}>
+//                   Recent Invoices
+//                 </Typography>
+//                 <Typography sx={{ fontSize: 12, color: "#94a3b8", mt: 0.5 }}>
+//                   Latest billing activity
+//                 </Typography>
+//               </Box>
+
+//               <Button
+//                 endIcon={<ArrowForwardRounded />}
+//                 onClick={() => (window.location.href = "/billing")}
+//                 sx={{ textTransform: "none", fontWeight: 700 }}
+//               >
+//                 View All
+//               </Button>
+//             </Stack>
+
+//             <Divider />
+
+//             {invoices.length === 0 ? (
+//               <Box sx={{ py: 6, px: 2, textAlign: "center" }}>
+//                 <Avatar
+//                   sx={{
+//                     mx: "auto",
+//                     mb: 1.5,
+//                     width: 54,
+//                     height: 54,
+//                     bgcolor: "#f1f5f9",
+//                     color: "#64748b",
+//                   }}
+//                 >
+//                   <ReceiptLongRounded />
+//                 </Avatar>
+//                 <Typography sx={{ fontWeight: 700, color: "#334155" }}>
+//                   No invoices found
+//                 </Typography>
+//                 <Typography sx={{ fontSize: 12, color: "#94a3b8", mt: 0.5 }}>
+//                   Create your first invoice to see it here.
+//                 </Typography>
+//                 <Button
+//                   variant="contained"
+//                   startIcon={<AddRounded />}
+//                   onClick={() => (window.location.href = "/billing")}
+//                   sx={{ mt: 2, textTransform: "none", borderRadius: 2 }}
+//                 >
+//                   Create Invoice
+//                 </Button>
+//               </Box>
+//             ) : (
+//               <Box sx={{ overflowX: "auto" }}>
+//                 <Box sx={{ minWidth: 650 }}>
+//                   <Box
+//                     sx={{
+//                       display: "grid",
+//                       gridTemplateColumns: "1.1fr 1.5fr 1fr 1fr 1fr",
+//                       gap: 2,
+//                       px: 3,
+//                       py: 1.5,
+//                       bgcolor: "#f8fafc",
+//                     }}
+//                   >
+//                     {["Invoice", "Customer", "Date", "Amount", "Status"].map((heading) => (
+//                       <Typography
+//                         key={heading}
+//                         sx={{
+//                           fontSize: 11,
+//                           color: "#64748b",
+//                           fontWeight: 700,
+//                           textTransform: "uppercase",
+//                           letterSpacing: ".5px",
+//                         }}
+//                       >
+//                         {heading}
+//                       </Typography>
+//                     ))}
+//                   </Box>
+
+//                   {invoices.slice(0, 5).map((invoice, index) => {
+//                     const status = getStatus(invoice);
+//                     const paid = /paid|completed/i.test(status);
+//                     const cancelled = /cancel/i.test(status);
+//                     const dateValue =
+//                       invoice.invoiceDate ||
+//                       invoice.invoice_date ||
+//                       invoice.created_at;
+
+//                     return (
+//                       <React.Fragment key={invoice.id || getInvoiceNumber(invoice) || index}>
+//                         <Box
+//                           sx={{
+//                             display: "grid",
+//                             gridTemplateColumns: "1.1fr 1.5fr 1fr 1fr 1fr",
+//                             gap: 2,
+//                             alignItems: "center",
+//                             px: 3,
+//                             py: 2,
+//                             "&:hover": { bgcolor: "#fafcff" },
+//                           }}
+//                         >
+//                           <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#2563eb" }}>
+//                             {getInvoiceNumber(invoice)}
+//                           </Typography>
+
+//                           <Typography
+//                             sx={{
+//                               fontSize: 13,
+//                               fontWeight: 600,
+//                               color: "#334155",
+//                               overflow: "hidden",
+//                               textOverflow: "ellipsis",
+//                               whiteSpace: "nowrap",
+//                             }}
+//                           >
+//                             {getCustomerName(invoice)}
+//                           </Typography>
+
+//                           <Typography sx={{ fontSize: 12, color: "#64748b" }}>
+//                             {dateValue
+//                               ? new Date(dateValue).toLocaleDateString("en-IN")
+//                               : "—"}
+//                           </Typography>
+
+//                           <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#172554" }}>
+//                             {formatCurrency(getInvoiceAmount(invoice))}
+//                           </Typography>
+
+//                           <Box>
+//                             <Chip
+//                               size="small"
+//                               label={status}
+//                               sx={{
+//                                 fontSize: 11,
+//                                 fontWeight: 700,
+//                                 textTransform: "capitalize",
+//                                 bgcolor: paid
+//                                   ? "#dcfce7"
+//                                   : cancelled
+//                                   ? "#fee2e2"
+//                                   : "#fef3c7",
+//                                 color: paid
+//                                   ? "#15803d"
+//                                   : cancelled
+//                                   ? "#b91c1c"
+//                                   : "#a16207",
+//                                 borderRadius: 1.5,
+//                               }}
+//                             />
+//                           </Box>
+//                         </Box>
+//                         {index < Math.min(invoices.length, 5) - 1 && <Divider />}
+//                       </React.Fragment>
+//                     );
+//                   })}
+//                 </Box>
+//               </Box>
+//             )}
+//           </Paper>
+//         </Grid>
+//       </Grid>
+//     </Box>
+//   );
+// };
+
+// export default Dashboard;
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
-  Drawer,
-  AppBar,
-  Toolbar,
+  Grid,
+  Paper,
   Typography,
-  IconButton,
-  Avatar,
-  Badge,
-  Menu,
-  MenuItem,
-  Divider,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Card,
-  CardContent,
   Button,
+  TextField,
+  MenuItem,
+  CircularProgress,
   Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  LinearProgress,
+  Avatar,
+  Divider,
+  Stack,
 } from "@mui/material";
 
 import {
-  Menu as MenuIcon,
-  DashboardOutlined,
-  ReceiptLongOutlined,
+  TrendingUpRounded,
+  ReceiptLongRounded,
+  AccountBalanceWalletRounded,
+  PaymentsRounded,
+  AddRounded,
   Inventory2Outlined,
-  People,
-  AssessmentOutlined,
-  AccountBalanceWalletOutlined,
-  SettingsOutlined,
-  CreditCardOutlined,
-  NotificationsNoneOutlined,
-  Add,
-  ArrowUpward,
-  ArrowDownward,
-  MoreVert,
-  LogoutOutlined,
-  BusinessOutlined,
-  ShoppingCartOutlined,
+  PersonAddAlt1Rounded,
+  ArrowForwardRounded,
+  CalendarMonthRounded,
+  ReceiptOutlined,
 } from "@mui/icons-material";
 
-import "./Dashboard.css";
+import API from "../../services/api";
 
-const drawerWidth = 250;
+const currency = (value) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(Number(value) || 0);
 
-const invoices = [
-  {
-    id: "INV-1025",
-    customer: "ABC Traders",
-    date: "25 Sep 2026",
-    amount: "₹2,500",
-    status: "Paid",
-  },
-  {
-    id: "INV-1024",
-    customer: "Sri Lakshmi Stores",
-    date: "25 Sep 2026",
-    amount: "₹5,200",
-    status: "Paid",
-  },
-  {
-    id: "INV-1023",
-    customer: "Kumar Agencies",
-    date: "24 Sep 2026",
-    amount: "₹1,800",
-    status: "Pending",
-  },
-  {
-    id: "INV-1022",
-    customer: "Raj & Co",
-    date: "24 Sep 2026",
-    amount: "₹7,450",
-    status: "Paid",
-  },
-  {
-    id: "INV-1021",
-    customer: "Bright Mart",
-    date: "23 Sep 2026",
-    amount: "₹3,250",
-    status: "Unpaid",
-  },
-];
+const todayDate = () => {
+  const date = new Date();
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+};
 
-const menuItems = [
-  {
-    label: "Dashboard",
-    icon: <DashboardOutlined />,
-  },
-  {
-    label: "Billing",
-    icon: <ReceiptLongOutlined />,
-  },
-  {
-    label: "Products",
-    icon: <Inventory2Outlined />,
-  },
-  {
-    label: "Customers",
-    icon: <People />,
-  },
-  {
-    label: "Inventory",
-    icon: <ShoppingCartOutlined />,
-  },
-  {
-    label: "Reports",
-    icon: <AssessmentOutlined />,
-  },
-  {
-    label: "Expenses",
-    icon: <AccountBalanceWalletOutlined />,
-  },
-];
-
-const bottomMenuItems = [
-  {
-    label: "Subscription",
-    icon: <CreditCardOutlined />,
-  },
-  {
-    label: "Settings",
-    icon: <SettingsOutlined />,
-  },
-];
-
-function StatCard({
-  title,
-  value,
-  subtitle,
-  icon,
-  trend,
-  positive = true,
-}) {
-  return (
-    <Card className="dashboard-stat-card">
-      <CardContent className="stat-card-content">
-        <Box className="stat-top">
-          <Box className="stat-icon">
-            {icon}
-          </Box>
-
-          <IconButton size="small" className="stat-more">
-            <MoreVert fontSize="small" />
-          </IconButton>
-        </Box>
-
-        <Typography className="stat-title">
-          {title}
-        </Typography>
-
-        <Typography className="stat-value">
-          {value}
-        </Typography>
-
-        <Box className="stat-bottom">
-          <Box
-            className={`stat-trend ${
-              positive
-                ? "trend-positive"
-                : "trend-negative"
-            }`}
-          >
-            {positive ? (
-              <ArrowUpward fontSize="inherit" />
-            ) : (
-              <ArrowDownward fontSize="inherit" />
-            )}
-
-            <span>{trend}</span>
-          </Box>
-
-          <Typography className="stat-subtitle">
-            {subtitle}
-          </Typography>
-        </Box>
-      </CardContent>
-    </Card>
-  );
-}
-
-function Dashboard() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [selectedMenu, setSelectedMenu] = useState("Dashboard");
-  const [profileAnchor, setProfileAnchor] = useState(null);
-  const [notificationAnchor, setNotificationAnchor] =
-    useState(null);
-
-  const handleDrawerToggle = () => {
-    setMobileOpen((prev) => !prev);
-  };
-
-  const handleProfileMenu = (event) => {
-    setProfileAnchor(event.currentTarget);
-  };
-
-  const handleNotificationMenu = (event) => {
-    setNotificationAnchor(event.currentTarget);
-  };
-
-  const handleCloseMenus = () => {
-    setProfileAnchor(null);
-    setNotificationAnchor(null);
-  };
-
-  const handleMenuClick = (label) => {
-    setSelectedMenu(label);
-
-    if (window.innerWidth < 900) {
-      setMobileOpen(false);
+const getValue = (data, keys) => {
+  for (const key of keys) {
+    if (data?.[key] !== undefined && data?.[key] !== null) {
+      return Number(data[key]) || 0;
     }
-  };
+  }
+  return 0;
+};
 
-  const drawerContent = (
-    <Box className="sidebar-wrapper">
+const Dashboard = () => {
+  const [todaySummary, setTodaySummary] = useState({});
+  const [summary, setSummary] = useState({});
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState("7");
 
-      {/* Logo */}
-      <Box className="sidebar-logo">
-        <Box className="logo-icon">
-          <BusinessOutlined />
-        </Box>
+  useEffect(() => {
+    const loadDashboard = async () => {
+      setLoading(true);
 
-        <Box>
-          <Typography className="logo-title">
-            CloudBill
-          </Typography>
+      const [todayResult, summaryResult, invoiceResult] =
+        await Promise.allSettled([
+          API.get("/reports/summary", {
+            params: {
+              startDate: todayDate(),
+              endDate: todayDate(),
+            },
+          }),
+          API.get("/reports/summary"),
+          API.get("/invoices"),
+        ]);
 
-          <Typography className="logo-subtitle">
-            Billing Software
-          </Typography>
-        </Box>
-      </Box>
+      if (todayResult.status === "fulfilled") {
+        const data = todayResult.value.data;
+        setTodaySummary(data?.summary || data || {});
+      }
 
-      <Divider className="sidebar-divider" />
+      if (summaryResult.status === "fulfilled") {
+        const data = summaryResult.value.data;
+        setSummary(data?.summary || data || {});
+      }
 
-      {/* Main Menu */}
-      <Typography className="menu-heading">
-        MAIN MENU
-      </Typography>
+      if (invoiceResult.status === "fulfilled") {
+        const data = invoiceResult.value.data;
+        const list = Array.isArray(data)
+          ? data
+          : data?.invoices || data?.data || [];
 
-      <List className="sidebar-list">
-        {menuItems.map((item) => (
-          <ListItemButton
-            key={item.label}
-            selected={selectedMenu === item.label}
-            onClick={() => handleMenuClick(item.label)}
-            className="sidebar-item"
-          >
-            <ListItemIcon className="sidebar-icon">
-              {item.icon}
-            </ListItemIcon>
+        setInvoices(Array.isArray(list) ? list : []);
+      }
 
-            <ListItemText primary={item.label} />
-          </ListItemButton>
-        ))}
-      </List>
+      setLoading(false);
+    };
 
-      {/* Account */}
-      <Typography className="menu-heading settings-heading">
-        ACCOUNT
-      </Typography>
+    loadDashboard();
+  }, []);
 
-      <List className="sidebar-list">
-        {bottomMenuItems.map((item) => (
-          <ListItemButton
-            key={item.label}
-            selected={selectedMenu === item.label}
-            onClick={() => handleMenuClick(item.label)}
-            className="sidebar-item"
-          >
-            <ListItemIcon className="sidebar-icon">
-              {item.icon}
-            </ListItemIcon>
+  const todaySales = getValue(todaySummary, [
+    "totalSales",
+    "todaySales",
+    "total_sales",
+    "sales",
+    "grandTotal",
+  ]);
 
-            <ListItemText primary={item.label} />
-          </ListItemButton>
-        ))}
-      </List>
+  const totalSales = getValue(summary, [
+    "totalSales",
+    "total_sales",
+    "sales",
+    "grandTotal",
+  ]);
 
-      {/* Trial */}
-      <Box className="trial-card">
-        <Typography className="trial-title">
-          Free Trial
-        </Typography>
+  const totalInvoices = getValue(summary, [
+    "totalInvoices",
+    "invoiceCount",
+    "total_invoices",
+    "invoice_count",
+  ]);
 
-        <Typography className="trial-days">
-          23 days remaining
-        </Typography>
+  const outstanding = getValue(summary, [
+    "outstanding",
+    "totalOutstanding",
+    "outstandingAmount",
+    "pendingAmount",
+    "total_outstanding",
+  ]);
 
-        <LinearProgress
-          variant="determinate"
-          value={77}
-          className="trial-progress"
-        />
+  const chartData = useMemo(() => {
+    const days = Number(period);
+    const result = [];
+    const today = new Date();
 
-        <Button
-          fullWidth
-          variant="contained"
-          className="upgrade-btn"
-        >
-          Upgrade Plan
-        </Button>
-      </Box>
-    </Box>
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+
+      result.push({
+        date: [
+          date.getFullYear(),
+          String(date.getMonth() + 1).padStart(2, "0"),
+          String(date.getDate()).padStart(2, "0"),
+        ].join("-"),
+        label: date.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+        }),
+        sales: 0,
+      });
+    }
+
+    invoices.forEach((invoice) => {
+      const date = String(
+        invoice.invoiceDate ||
+          invoice.invoice_date ||
+          invoice.created_at ||
+          ""
+      ).slice(0, 10);
+
+      const entry = result.find((item) => item.date === date);
+
+      if (entry) {
+        entry.sales += Number(
+          invoice.grandTotal ??
+            invoice.grand_total ??
+            invoice.totalAmount ??
+            invoice.total_amount ??
+            invoice.total ??
+            0
+        );
+      }
+    });
+
+    return result;
+  }, [invoices, period]);
+
+  const maxSales = Math.max(
+    ...chartData.map((item) => item.sales),
+    100
   );
 
-  return (
-    <Box className="dashboard-root">
+  const chartPoints = chartData
+    .map((item, index) => {
+      const x =
+        chartData.length === 1
+          ? 50
+          : (index / (chartData.length - 1)) * 100;
 
-      {/* Sidebar */}
+      const y = 90 - (item.sales / maxSales) * 75;
+
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  const areaPoints = `0,100 ${chartPoints} 100,100`;
+
+  const metrics = [
+    {
+      title: "Today's Sales",
+      value: currency(todaySales),
+      subtitle: "Sales recorded today",
+      icon: <TrendingUpRounded />,
+      color: "#2563eb",
+      bg: "#eff6ff",
+    },
+    {
+      title: "Total Sales",
+      value: currency(totalSales),
+      subtitle: "Sales in summary period",
+      icon: <PaymentsRounded />,
+      color: "#059669",
+      bg: "#ecfdf5",
+    },
+    {
+      title: "Total Invoices",
+      value: totalInvoices.toLocaleString("en-IN"),
+      subtitle: "Invoices in summary period",
+      icon: <ReceiptLongRounded />,
+      color: "#7c3aed",
+      bg: "#f5f3ff",
+    },
+    {
+      title: "Outstanding",
+      value: currency(outstanding),
+      subtitle: "Pending customer payments",
+      icon: <AccountBalanceWalletRounded />,
+      color: "#ea580c",
+      bg: "#fff7ed",
+    },
+  ];
+
+  const actions = [
+    {
+      title: "Create Invoice",
+      description: "Create a new customer bill",
+      icon: <ReceiptOutlined />,
+      color: "#2563eb",
+      path: "/billing",
+    },
+    {
+      title: "Add Product",
+      description: "Add products to your inventory",
+      icon: <Inventory2Outlined />,
+      color: "#059669",
+      path: "/products",
+    },
+    {
+      title: "Add Customer",
+      description: "Manage customer details",
+      icon: <PersonAddAlt1Rounded />,
+      color: "#7c3aed",
+      path: "/customers",
+    },
+  ];
+
+  const goTo = (path) => {
+    window.location.href = path;
+  };
+
+  const invoiceNumber = (invoice) =>
+    invoice.invoiceNumber ||
+    invoice.invoice_number ||
+    invoice.invoiceNo ||
+    invoice.invoice_no ||
+    `INV-${invoice.id || ""}`;
+
+  const customerName = (invoice) =>
+    invoice.customer_name ||
+    invoice.customerName ||
+    invoice.customer?.name ||
+    invoice.customer?.customer_name ||
+    "Customer";
+
+  const invoiceAmount = (invoice) =>
+    invoice.grandTotal ??
+    invoice.grand_total ??
+    invoice.totalAmount ??
+    invoice.total_amount ??
+    invoice.total ??
+    0;
+
+  if (loading) {
+    return (
       <Box
-        component="nav"
-        className="dashboard-navigation"
-        aria-label="dashboard navigation"
+        sx={{
+          minHeight: "60vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
       >
-
-        {/* Mobile */}
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: {
-              xs: "block",
-              md: "none",
-            },
-            "& .MuiDrawer-paper": {
-              width: drawerWidth,
-              boxSizing: "border-box",
-            },
-          }}
-        >
-          {drawerContent}
-        </Drawer>
-
-        {/* Desktop */}
-        <Drawer
-          variant="permanent"
-          open
-          sx={{
-            display: {
-              xs: "none",
-              md: "block",
-            },
-            "& .MuiDrawer-paper": {
-              width: drawerWidth,
-              boxSizing: "border-box",
-            },
-          }}
-        >
-          {drawerContent}
-        </Drawer>
+        <CircularProgress />
       </Box>
+    );
+  }
 
-      {/* Main */}
-      <Box className="dashboard-main">
+  return (
+    <Box
+      sx={{
+        width: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
+        p: { xs: 2, sm: 3, lg: 4 },
+        bgcolor: "#f8fafc",
+      }}
+    >
+      {/* Header */}
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", md: "center" }}
+        spacing={2}
+        sx={{ mb: 3 }}
+      >
+        <Box>
+          <Typography
+            sx={{
+              fontSize: { xs: 25, md: 30 },
+              fontWeight: 800,
+              color: "#172554",
+              letterSpacing: "-0.7px",
+            }}
+          >
+            Dashboard
+          </Typography>
 
-        {/* Topbar */}
-        <AppBar
-          position="sticky"
-          className="dashboard-appbar"
-        >
-          <Toolbar className="dashboard-toolbar">
+          <Typography sx={{ color: "#64748b", fontSize: 14, mt: 0.5 }}>
+            Here's what's happening with your business today.
+          </Typography>
+        </Box>
 
-            <IconButton
-              color="inherit"
-              edge="start"
-              onClick={handleDrawerToggle}
-              className="mobile-menu-button"
+        <Stack direction="row" spacing={1.5}>
+          <Chip
+            icon={<CalendarMonthRounded />}
+            label={new Date().toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+            sx={{
+              height: 42,
+              bgcolor: "#fff",
+              border: "1px solid #e2e8f0",
+              fontWeight: 600,
+            }}
+          />
+
+          <Button
+            variant="contained"
+            startIcon={<AddRounded />}
+            onClick={() => goTo("/billing")}
+            sx={{
+              bgcolor: "#2563eb",
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 700,
+              px: 2,
+              "&:hover": { bgcolor: "#1d4ed8" },
+            }}
+          >
+            New Invoice
+          </Button>
+        </Stack>
+      </Stack>
+
+      {/* KPI Cards */}
+      <Grid container spacing={2.5}>
+        {metrics.map((metric) => (
+          <Grid item xs={12} sm={6} xl={3} key={metric.title}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2.5,
+                height: "100%",
+                border: "1px solid #e8edf5",
+                borderRadius: 3,
+                transition: "0.2s",
+                "&:hover": {
+                  transform: "translateY(-3px)",
+                  boxShadow: "0 12px 28px rgba(15,23,42,0.06)",
+                },
+              }}
             >
-              <MenuIcon />
-            </IconButton>
-
-            <Box className="mobile-brand">
-              <Typography>
-                CloudBill
-              </Typography>
-            </Box>
-
-            <Box className="topbar-spacer" />
-
-            {/* Notification */}
-            <IconButton
-              className="notification-button"
-              onClick={handleNotificationMenu}
-            >
-              <Badge
-                badgeContent={3}
-                color="error"
-                overlap="circular"
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
               >
-                <NotificationsNoneOutlined />
-              </Badge>
-            </IconButton>
-
-            <Menu
-              anchorEl={notificationAnchor}
-              open={Boolean(notificationAnchor)}
-              onClose={handleCloseMenus}
-            >
-              <MenuItem>
-                <Box>
-                  <Typography fontWeight={600}>
-                    New invoice created
-                  </Typography>
-
-                  <Typography variant="caption">
-                    INV-1025 was created successfully.
-                  </Typography>
-                </Box>
-              </MenuItem>
-
-              <MenuItem>
-                <Box>
-                  <Typography fontWeight={600}>
-                    Low stock alert
-                  </Typography>
-
-                  <Typography variant="caption">
-                    Product A stock is below minimum.
-                  </Typography>
-                </Box>
-              </MenuItem>
-            </Menu>
-
-            {/* Profile */}
-            <Box
-              className="profile-area"
-              onClick={handleProfileMenu}
-            >
-              <Avatar className="profile-avatar">
-                A
-              </Avatar>
-
-              <Box className="profile-details">
-                <Typography className="profile-name">
-                  Admin
+                <Typography sx={{ fontSize: 13, color: "#64748b", fontWeight: 600 }}>
+                  {metric.title}
                 </Typography>
 
-                <Typography className="profile-role">
-                  Owner
+                <Avatar
+                  variant="rounded"
+                  sx={{
+                    bgcolor: metric.bg,
+                    color: metric.color,
+                    width: 42,
+                    height: 42,
+                    borderRadius: 2.5,
+                  }}
+                >
+                  {metric.icon}
+                </Avatar>
+              </Stack>
+
+              <Typography
+                sx={{
+                  mt: 2,
+                  fontSize: { xs: 23, md: 26 },
+                  fontWeight: 800,
+                  color: "#172554",
+                  overflowWrap: "anywhere",
+                }}
+              >
+                {metric.value}
+              </Typography>
+
+              <Typography sx={{ fontSize: 12, color: "#94a3b8", mt: 0.8 }}>
+                {metric.subtitle}
+              </Typography>
+            </Paper>
+          </Grid>
+        ))}
+
+        {/* SVG Sales Chart */}
+        <Grid item xs={12} lg={8}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 2, sm: 3 },
+              height: 390,
+              border: "1px solid #e8edf5",
+              borderRadius: 3,
+            }}
+          >
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              spacing={1}
+            >
+              <Box>
+                <Typography sx={{ fontWeight: 800, color: "#172554", fontSize: 17 }}>
+                  Sales Overview
                 </Typography>
+                <Typography sx={{ color: "#94a3b8", fontSize: 12, mt: 0.5 }}>
+                  Invoice sales over time
+                </Typography>
+              </Box>
+
+              <TextField
+                select
+                size="small"
+                value={period}
+                onChange={(event) => setPeriod(event.target.value)}
+                sx={{
+                  width: 125,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    fontSize: 12,
+                  },
+                }}
+              >
+                <MenuItem value="7">Last 7 days</MenuItem>
+                <MenuItem value="14">Last 14 days</MenuItem>
+                <MenuItem value="30">Last 30 days</MenuItem>
+              </TextField>
+            </Stack>
+
+            <Box sx={{ width: "100%", mt: 3 }}>
+              <svg
+                viewBox="0 0 100 105"
+                preserveAspectRatio="none"
+                style={{ width: "100%", height: 235, overflow: "visible" }}
+                role="img"
+                aria-label="Daily invoice sales chart"
+              >
+                {[20, 40, 60, 80].map((y) => (
+                  <line
+                    key={y}
+                    x1="0"
+                    y1={y}
+                    x2="100"
+                    y2={y}
+                    stroke="#e8edf5"
+                    strokeWidth="0.5"
+                    strokeDasharray="2 2"
+                  />
+                ))}
+
+                <polygon points={areaPoints} fill="#dbeafe" opacity="0.8" />
+
+                <polyline
+                  points={chartPoints}
+                  fill="none"
+                  stroke="#2563eb"
+                  strokeWidth="1.2"
+                  vectorEffect="non-scaling-stroke"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+
+                {chartData.map((item, index) => {
+                  const x =
+                    chartData.length === 1
+                      ? 50
+                      : (index / (chartData.length - 1)) * 100;
+
+                  const y = 90 - (item.sales / maxSales) * 75;
+
+                  return (
+                    <circle
+                      key={item.date}
+                      cx={x}
+                      cy={y}
+                      r="1.3"
+                      fill="#2563eb"
+                    >
+                      <title>
+                        {item.label}: {currency(item.sales)}
+                      </title>
+                    </circle>
+                  );
+                })}
+              </svg>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 1,
+                  mt: 1,
+                }}
+              >
+                {chartData.map((item, index) => {
+                  const showLabel =
+                    chartData.length <= 7 ||
+                    index % Math.ceil(chartData.length / 7) === 0 ||
+                    index === chartData.length - 1;
+
+                  return (
+                    <Typography
+                      key={item.date}
+                      sx={{
+                        fontSize: 10,
+                        color: "#94a3b8",
+                        whiteSpace: "nowrap",
+                        visibility: showLabel ? "visible" : "hidden",
+                      }}
+                    >
+                      {item.label}
+                    </Typography>
+                  );
+                })}
               </Box>
             </Box>
 
-            <Menu
-              anchorEl={profileAnchor}
-              open={Boolean(profileAnchor)}
-              onClose={handleCloseMenus}
-            >
-              <MenuItem onClick={handleCloseMenus}>
-                <ListItemIcon>
-                  <SettingsOutlined fontSize="small" />
-                </ListItemIcon>
+            <Typography sx={{ color: "#94a3b8", fontSize: 11, mt: 2 }}>
+              Daily sales based on invoices loaded from your API.
+            </Typography>
+          </Paper>
+        </Grid>
 
-                Profile Settings
-              </MenuItem>
+        {/* Quick Actions */}
+        <Grid item xs={12} lg={4}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              height: 390,
+              border: "1px solid #e8edf5",
+              borderRadius: 3,
+            }}
+          >
+            <Typography sx={{ fontWeight: 800, color: "#172554", fontSize: 17 }}>
+              Quick Actions
+            </Typography>
 
-              <Divider />
+            <Typography sx={{ color: "#94a3b8", fontSize: 12, mt: 0.5, mb: 2 }}>
+              Manage your daily operations
+            </Typography>
 
-              <MenuItem onClick={handleCloseMenus}>
-                <ListItemIcon>
-                  <LogoutOutlined fontSize="small" />
-                </ListItemIcon>
+            <Stack spacing={1.5}>
+              {actions.map((action) => (
+                <Box
+                  key={action.title}
+                  onClick={() => goTo(action.path)}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    p: 1.5,
+                    borderRadius: 2.5,
+                    cursor: "pointer",
+                    border: "1px solid transparent",
+                    "&:hover": {
+                      bgcolor: "#f8fafc",
+                      borderColor: "#e2e8f0",
+                    },
+                  }}
+                >
+                  <Avatar
+                    variant="rounded"
+                    sx={{
+                      width: 43,
+                      height: 43,
+                      bgcolor: `${action.color}12`,
+                      color: action.color,
+                      borderRadius: 2.5,
+                    }}
+                  >
+                    {action.icon}
+                  </Avatar>
 
-                Logout
-              </MenuItem>
-            </Menu>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>
+                      {action.title}
+                    </Typography>
+                    <Typography sx={{ fontSize: 11, color: "#94a3b8", mt: 0.4 }}>
+                      {action.description}
+                    </Typography>
+                  </Box>
 
-          </Toolbar>
-        </AppBar>
+                  <ArrowForwardRounded sx={{ fontSize: 17, color: "#94a3b8" }} />
+                </Box>
+              ))}
+            </Stack>
 
-        {/* Content */}
-        <Box className="dashboard-content">
+            <Divider sx={{ my: 2 }} />
 
-          {/* Page Header */}
-          <Box className="page-header">
-            <Box>
-              <Typography className="page-title">
-                Dashboard
+            <Box sx={{ p: 2, bgcolor: "#eff6ff", borderRadius: 2.5 }}>
+              <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#1d4ed8" }}>
+                GST-Compliant Billing
               </Typography>
-
-              <Typography className="page-description">
-                Welcome back! Here's what's happening with your
-                business today.
+              <Typography sx={{ fontSize: 11, color: "#64748b", mt: 0.5, lineHeight: 1.6 }}>
+                Keep your invoices and business records organized in one place.
               </Typography>
             </Box>
+          </Paper>
+        </Grid>
 
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              className="create-invoice-btn"
+        {/* Recent Invoices */}
+        <Grid item xs={12}>
+          <Paper
+            elevation={0}
+            sx={{
+              border: "1px solid #e8edf5",
+              borderRadius: 3,
+              overflow: "hidden",
+            }}
+          >
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ p: { xs: 2, sm: 3 } }}
             >
-              Create Invoice
-            </Button>
-          </Box>
-
-          {/* Stats */}
-          <Box className="stats-grid">
-
-            <StatCard
-              title="Today's Sales"
-              value="₹25,450"
-              subtitle="vs yesterday"
-              trend="12.5%"
-              positive
-              icon={
-                <AccountBalanceWalletOutlined />
-              }
-            />
-
-            <StatCard
-              title="Total Sales"
-              value="₹5,25,000"
-              subtitle="this month"
-              trend="8.2%"
-              positive
-              icon={<ArrowUpward />}
-            />
-
-            <StatCard
-              title="Total Invoices"
-              value="245"
-              subtitle="this month"
-              trend="15.8%"
-              positive
-              icon={<ReceiptLongOutlined />}
-            />
-
-            <StatCard
-              title="Outstanding"
-              value="₹45,500"
-              subtitle="pending amount"
-              trend="4.6%"
-              positive={false}
-              icon={<CreditCardOutlined />}
-            />
-
-          </Box>
-
-          {/* Chart + Quick Actions */}
-          <Box className="middle-grid">
-
-            {/* Sales Overview */}
-            <Card className="chart-card">
-              <CardContent>
-
-                <Box className="section-header">
-                  <Box>
-                    <Typography className="section-title">
-                      Sales Overview
-                    </Typography>
-
-                    <Typography className="section-subtitle">
-                      Your sales performance for this week
-                    </Typography>
-                  </Box>
-
-                  <Button
-                    variant="outlined"
-                    className="period-btn"
-                  >
-                    This Week
-                  </Button>
-                </Box>
-
-                {/* Pure CSS Chart */}
-                <Box className="simple-chart">
-
-                  <Box className="chart-y-labels">
-                    <span>₹35k</span>
-                    <span>₹25k</span>
-                    <span>₹15k</span>
-                    <span>₹5k</span>
-                  </Box>
-
-                  <Box className="chart-area">
-
-                    <Box className="chart-grid-line line-1" />
-                    <Box className="chart-grid-line line-2" />
-                    <Box className="chart-grid-line line-3" />
-                    <Box className="chart-grid-line line-4" />
-
-                    <Box className="chart-bars">
-
-                      <Box className="chart-column">
-                        <Box className="chart-bar bar-1" />
-                        <span>Mon</span>
-                      </Box>
-
-                      <Box className="chart-column">
-                        <Box className="chart-bar bar-2" />
-                        <span>Tue</span>
-                      </Box>
-
-                      <Box className="chart-column">
-                        <Box className="chart-bar bar-3" />
-                        <span>Wed</span>
-                      </Box>
-
-                      <Box className="chart-column">
-                        <Box className="chart-bar bar-4" />
-                        <span>Thu</span>
-                      </Box>
-
-                      <Box className="chart-column">
-                        <Box className="chart-bar bar-5" />
-                        <span>Fri</span>
-                      </Box>
-
-                      <Box className="chart-column">
-                        <Box className="chart-bar bar-6" />
-                        <span>Sat</span>
-                      </Box>
-
-                      <Box className="chart-column">
-                        <Box className="chart-bar bar-7" />
-                        <span>Sun</span>
-                      </Box>
-
-                    </Box>
-                  </Box>
-                </Box>
-
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="quick-card">
-              <CardContent>
-
-                <Typography className="section-title">
-                  Quick Actions
+              <Box>
+                <Typography sx={{ fontWeight: 800, color: "#172554", fontSize: 17 }}>
+                  Recent Invoices
                 </Typography>
-
-                <Typography className="section-subtitle">
-                  Frequently used actions
+                <Typography sx={{ fontSize: 12, color: "#94a3b8", mt: 0.5 }}>
+                  Latest billing activity
                 </Typography>
-
-                <Box className="quick-actions">
-
-                  <Button
-                    className="quick-action"
-                    startIcon={
-                      <ReceiptLongOutlined />
-                    }
-                  >
-                    New Invoice
-                  </Button>
-
-                  <Button
-                    className="quick-action"
-                    startIcon={<People />}
-                  >
-                    Add Customer
-                  </Button>
-
-                  <Button
-                    className="quick-action"
-                    startIcon={
-                      <Inventory2Outlined />
-                    }
-                  >
-                    Add Product
-                  </Button>
-
-                  <Button
-                    className="quick-action"
-                    startIcon={
-                      <AssessmentOutlined />
-                    }
-                  >
-                    View Reports
-                  </Button>
-
-                </Box>
-              </CardContent>
-            </Card>
-
-          </Box>
-
-          {/* Recent Invoices */}
-          <Card className="invoice-card">
-            <CardContent className="invoice-card-content">
-
-              <Box className="section-header invoice-header">
-
-                <Box>
-                  <Typography className="section-title">
-                    Recent Invoices
-                  </Typography>
-
-                  <Typography className="section-subtitle">
-                    Latest billing activity
-                  </Typography>
-                </Box>
-
-                <Button className="view-all-btn">
-                  View All
-                </Button>
-
               </Box>
 
-              <TableContainer className="invoice-table-container">
+              <Button
+                endIcon={<ArrowForwardRounded />}
+                onClick={() => goTo("/billing")}
+                sx={{ textTransform: "none", fontWeight: 700 }}
+              >
+                View All
+              </Button>
+            </Stack>
 
-                <Table>
+            <Divider />
 
-                  <TableHead>
-                    <TableRow>
+            {invoices.length === 0 ? (
+              <Box sx={{ py: 6, textAlign: "center", px: 2 }}>
+                <ReceiptLongRounded sx={{ fontSize: 42, color: "#94a3b8" }} />
 
-                      <TableCell>
-                        Invoice
-                      </TableCell>
-
-                      <TableCell>
-                        Customer
-                      </TableCell>
-
-                      <TableCell>
-                        Date
-                      </TableCell>
-
-                      <TableCell>
-                        Amount
-                      </TableCell>
-
-                      <TableCell>
-                        Status
-                      </TableCell>
-
-                      <TableCell align="right">
-                        Action
-                      </TableCell>
-
-                    </TableRow>
-                  </TableHead>
-
-                  <TableBody>
-
-                    {invoices.map((invoice) => (
-                      <TableRow key={invoice.id}>
-
-                        <TableCell>
-                          <Typography className="invoice-id">
-                            {invoice.id}
-                          </Typography>
-                        </TableCell>
-
-                        <TableCell>
-                          <Box className="customer-cell">
-
-                            <Avatar className="customer-avatar">
-                              {invoice.customer.charAt(0)}
-                            </Avatar>
-
-                            <Typography>
-                              {invoice.customer}
-                            </Typography>
-
-                          </Box>
-                        </TableCell>
-
-                        <TableCell>
-                          {invoice.date}
-                        </TableCell>
-
-                        <TableCell>
-                          <Typography className="amount-cell">
-                            {invoice.amount}
-                          </Typography>
-                        </TableCell>
-
-                        <TableCell>
-                          <Chip
-                            label={invoice.status}
-                            className={`status-chip status-${invoice.status.toLowerCase()}`}
-                          />
-                        </TableCell>
-
-                        <TableCell align="right">
-                          <IconButton size="small">
-                            <MoreVert fontSize="small" />
-                          </IconButton>
-                        </TableCell>
-
-                      </TableRow>
-                    ))}
-
-                  </TableBody>
-
-                </Table>
-
-              </TableContainer>
-
-            </CardContent>
-          </Card>
-
-          {/* Bottom Cards */}
-          <Box className="bottom-grid">
-
-            {/* Inventory */}
-            <Card className="bottom-card">
-              <CardContent>
-
-                <Typography className="section-title">
-                  Inventory Alert
+                <Typography sx={{ mt: 1, fontWeight: 700, color: "#334155" }}>
+                  No invoices found
                 </Typography>
 
-                <Typography className="section-subtitle">
-                  Products that need attention
+                <Typography sx={{ mt: 0.5, fontSize: 12, color: "#94a3b8" }}>
+                  Create your first invoice to see it here.
                 </Typography>
-
-                <Box className="inventory-item">
-
-                  <Box>
-                    <Typography className="inventory-name">
-                      Product A
-                    </Typography>
-
-                    <Typography className="inventory-stock">
-                      Only 8 items left
-                    </Typography>
-                  </Box>
-
-                  <Chip
-                    label="Low Stock"
-                    className="low-stock-chip"
-                  />
-
-                </Box>
-
-                <Box className="inventory-item">
-
-                  <Box>
-                    <Typography className="inventory-name">
-                      Product B
-                    </Typography>
-
-                    <Typography className="inventory-stock">
-                      Only 12 items left
-                    </Typography>
-                  </Box>
-
-                  <Chip
-                    label="Low Stock"
-                    className="low-stock-chip"
-                  />
-
-                </Box>
-
-              </CardContent>
-            </Card>
-
-            {/* Trial */}
-            <Card className="bottom-card">
-              <CardContent>
-
-                <Typography className="section-title">
-                  Trial Status
-                </Typography>
-
-                <Typography className="section-subtitle">
-                  Your current subscription
-                </Typography>
-
-                <Box className="trial-status">
-
-                  <Box>
-                    <Typography className="trial-plan">
-                      Free Trial
-                    </Typography>
-
-                    <Typography className="trial-date">
-                      Expires on 18 October 2026
-                    </Typography>
-                  </Box>
-
-                  <Chip
-                    label="23 Days Left"
-                    className="trial-chip"
-                  />
-
-                </Box>
 
                 <Button
-                  fullWidth
                   variant="contained"
-                  className="trial-upgrade"
+                  startIcon={<AddRounded />}
+                  onClick={() => goTo("/billing")}
+                  sx={{ mt: 2, textTransform: "none", borderRadius: 2 }}
                 >
-                  Upgrade Subscription
+                  Create Invoice
                 </Button>
+              </Box>
+            ) : (
+              <Box sx={{ overflowX: "auto" }}>
+                <Box sx={{ minWidth: 650 }}>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "1.1fr 1.5fr 1fr 1fr 1fr",
+                      gap: 2,
+                      px: 3,
+                      py: 1.5,
+                      bgcolor: "#f8fafc",
+                    }}
+                  >
+                    {["Invoice", "Customer", "Date", "Amount", "Status"].map(
+                      (heading) => (
+                        <Typography
+                          key={heading}
+                          sx={{
+                            fontSize: 11,
+                            color: "#64748b",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {heading}
+                        </Typography>
+                      )
+                    )}
+                  </Box>
 
-              </CardContent>
-            </Card>
+                  {invoices.slice(0, 5).map((invoice, index) => {
+                    const status = String(
+                      invoice.status ||
+                        invoice.paymentStatus ||
+                        invoice.payment_status ||
+                        "Pending"
+                    );
 
-          </Box>
+                    const isPaid = /paid|completed/i.test(status);
+                    const isCancelled = /cancel/i.test(status);
 
-        </Box>
-      </Box>
+                    const dateValue =
+                      invoice.invoiceDate ||
+                      invoice.invoice_date ||
+                      invoice.created_at;
+
+                    return (
+                      <React.Fragment
+                        key={invoice.id || invoiceNumber(invoice) || index}
+                      >
+                        <Box
+                          sx={{
+                            display: "grid",
+                            gridTemplateColumns: "1.1fr 1.5fr 1fr 1fr 1fr",
+                            alignItems: "center",
+                            gap: 2,
+                            px: 3,
+                            py: 2,
+                          }}
+                        >
+                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#2563eb" }}>
+                            {invoiceNumber(invoice)}
+                          </Typography>
+
+                          <Typography
+                            sx={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: "#334155",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {customerName(invoice)}
+                          </Typography>
+
+                          <Typography sx={{ fontSize: 12, color: "#64748b" }}>
+                            {dateValue
+                              ? new Date(dateValue).toLocaleDateString("en-IN")
+                              : "—"}
+                          </Typography>
+
+                          <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#172554" }}>
+                            {currency(invoiceAmount(invoice))}
+                          </Typography>
+
+                          <Chip
+                            size="small"
+                            label={status}
+                            sx={{
+                              width: "fit-content",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              textTransform: "capitalize",
+                              bgcolor: isPaid
+                                ? "#dcfce7"
+                                : isCancelled
+                                ? "#fee2e2"
+                                : "#fef3c7",
+                              color: isPaid
+                                ? "#15803d"
+                                : isCancelled
+                                ? "#b91c1c"
+                                : "#a16207",
+                            }}
+                          />
+                        </Box>
+
+                        {index < Math.min(invoices.length, 5) - 1 && <Divider />}
+                      </React.Fragment>
+                    );
+                  })}
+                </Box>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
-}
+};
 
 export default Dashboard;

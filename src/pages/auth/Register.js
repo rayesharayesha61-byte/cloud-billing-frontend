@@ -182,10 +182,40 @@ function Register() {
         password: formData.password,
       };
 
-      const response = await API.post(
-        "/auth/register",
-        registerData
-      );
+const response = await API.post(
+  "/auth/register",
+  registerData
+);
+
+// Save JWT token
+localStorage.setItem("token", response.data.token);
+
+setSuccess(
+  response.data.message ||
+    "Registration successful!"
+);
+
+setTimeout(() => {
+  navigate("/business-details");
+}, 1800);
+
+setSuccess(
+  response.data.message ||
+    "Registration successful!"
+);
+
+setTimeout(() => {
+  navigate("/login");
+}, 1800);
+
+setSuccess(
+  response.data.message ||
+    "Registration successful!"
+);
+
+setTimeout(() => {
+  navigate("/business-details");
+}, 1800);
 
       setSuccess(
         response.data.message ||
@@ -209,30 +239,30 @@ function Register() {
 
   return (
     <Box
-      sx={{
-        minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 50%, #F8FAFC 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        px: { xs: 2, sm: 3 },
-        py: { xs: 3, md: 5 },
-      }}
-    >
+  sx={{
+    width: "100%",
+    minHeight: "100vh",
+    background:
+      "linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 50%, #F8FAFC 100%)",
+    display: "flex",
+    alignItems: "stretch",
+    justifyContent: "stretch",
+    p: 0,
+    m: 0,
+  }}
+>
       <Paper
-        elevation={0}
-        sx={{
-          width: "100%",
-          maxWidth: 1050,
-          borderRadius: 3,
-          overflow: "hidden",
-          border: "1px solid #E2E8F0",
-          background: "#FFFFFF",
-          boxShadow:
-            "0 25px 70px rgba(15, 23, 42, 0.10)",
-        }}
-      >
+  elevation={0}
+  sx={{
+    width: "100%",
+    minHeight: "100vh",
+    borderRadius: 0,
+    overflow: "hidden",
+    border: "none",
+    background: "#FFFFFF",
+    boxShadow: "none",
+  }}
+>
         <Grid container>
           {/* ================= LEFT BRAND ================= */}
 
@@ -398,43 +428,44 @@ function Register() {
 
             {/* STEPPER */}
 
-            <Stepper
-              activeStep={activeStep}
-              sx={{
-                mb: 4,
+       <Stepper
+  activeStep={activeStep}
+  alternativeLabel
+  sx={{
+    mb: 4,
 
-                "& .MuiStepLabel-label": {
-                  color: "#94A3B8",
-                  fontWeight: 500,
-                },
+    "& .MuiStepLabel-label": {
+      color: "#94A3B8",
+      fontWeight: 500,
+    },
 
-                "& .MuiStepLabel-label.Mui-active": {
-                  color: "#4F46E5",
-                  fontWeight: 700,
-                },
+    "& .MuiStepLabel-label.Mui-active": {
+      color: "#4F46E5",
+      fontWeight: 700,
+    },
 
-                "& .MuiStepLabel-label.Mui-completed": {
-                  color: "#4F46E5",
-                  fontWeight: 600,
-                },
+    "& .MuiStepLabel-label.Mui-completed": {
+      color: "#4F46E5",
+      fontWeight: 600,
+    },
 
-                "& .MuiStepIcon-root": {
-                  color: "#CBD5E1",
-                },
+    "& .MuiStepIcon-root": {
+      color: "#CBD5E1",
+    },
 
-                "& .MuiStepIcon-root.Mui-active": {
-                  color: "#4F46E5",
-                },
+    "& .MuiStepIcon-root.Mui-active": {
+      color: "#4F46E5",
+    },
 
-                "& .MuiStepIcon-root.Mui-completed": {
-                  color: "#4F46E5",
-                },
+    "& .MuiStepIcon-root.Mui-completed": {
+      color: "#4F46E5",
+    },
 
-                "& .MuiStepConnector-line": {
-                  borderColor: "#E0E7FF",
-                },
-              }}
-            >
+    "& .MuiStepConnector-line": {
+      borderColor: "#E0E7FF",
+    },
+  }}
+>
               {steps.map((label) => (
                 <Step key={label}>
                   <StepLabel>{label}</StepLabel>
@@ -1035,7 +1066,7 @@ function Register() {
                     type="button"
                     variant="text"
                     onClick={() =>
-                      navigate("/login")
+                      navigate("/business-details")
                     }
                     sx={{
                       color: "#64748B",

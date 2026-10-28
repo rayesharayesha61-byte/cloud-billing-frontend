@@ -5,29 +5,17 @@ export const getProducts = async () => {
   return response.data;
 };
 
-export const getProduct = async (id) => {
-  const response = await API.get(`/products/${id}`);
-  return response.data;
-};
-
-export const addProduct = async (data) => {
+export const createProduct = async (data) => {
   const response = await API.post("/products", data);
   return response.data;
 };
 
 export const updateProduct = async (id, data) => {
-  const response = await API.put(
-    `/products/${id}`,
-    data
-  );
-
+  const response = await API.put(`/products/${id}`, data);
   return response.data;
 };
 
 export const deleteProduct = async (id) => {
-  const response = await API.delete(
-    `/products/${id}`
-  );
-
+  const response = await API.delete(`/products/${id}`);
   return response.data;
 };
