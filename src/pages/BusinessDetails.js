@@ -41,7 +41,7 @@ const BusinessDetails = () => {
   const [loading, setLoading] = useState(false);
   const [loadingBusiness, setLoadingBusiness] = useState(true);
   const [error, setError] = useState("");
-  const [logo, setLogo] = useState(null);
+  // const [logo, setLogo] = useState(null);
   const [preview, setPreview] = useState("");
 
   const [formData, setFormData] = useState({
@@ -138,7 +138,7 @@ const BusinessDetails = () => {
       return;
     }
 
-    setLogo(file);
+  
 
     const imageUrl = URL.createObjectURL(file);
     setPreview(imageUrl);
@@ -209,7 +209,7 @@ const BusinessDetails = () => {
   businessType,
   state,
   invoicePrefix: invoicePrefix || "INV",
-  logo: "",
+  
 });
 
       navigate("/dashboard", { replace: true });
