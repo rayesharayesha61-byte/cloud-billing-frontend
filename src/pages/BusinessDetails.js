@@ -5,7 +5,7 @@ import {
   Box,
   Button,
   Chip,
-  Container,
+ 
   Divider,
   Grid,
   InputAdornment,
@@ -41,7 +41,7 @@ const BusinessDetails = () => {
   const [loading, setLoading] = useState(false);
   const [loadingBusiness, setLoadingBusiness] = useState(true);
   const [error, setError] = useState("");
-  const [logo, setLogo] = useState(null);
+  // const [logo, setLogo] = useState(null);
   const [preview, setPreview] = useState("");
 
   const [formData, setFormData] = useState({

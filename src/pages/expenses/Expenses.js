@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Box,
   Grid,
@@ -37,7 +37,7 @@ import {
   DeleteOutlineRounded,
   EditOutlined,
   CloseRounded,
-  TrendingUpRounded,
+  
   LocalShippingOutlined,
   StorefrontOutlined,
   BoltOutlined,
@@ -105,32 +105,34 @@ const Expenses = () => {
     setNotice({ open: true, message, severity });
   };
 
-  const loadExpenses = async () => {
-    setLoading(true);
+ const loadExpenses = useCallback(async () => {
+  setLoading(true);
 
-    try {
-      const response = await API.get("/expenses");
-      const data = response.data;
-      const list = Array.isArray(data)
-        ? data
-        : data?.expenses || data?.data || [];
+  try {
+    const response = await API.get("/expenses");
+    const data = response.data;
 
-      setExpenses(Array.isArray(list) ? list : []);
-    } catch (error) {
-      console.error("Load expenses error:", error);
-      showNotice(
-        error.response?.data?.message ||
-          "Unable to load expenses. Check your API endpoint.",
-        "error"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    const list = Array.isArray(data)
+      ? data
+      : data?.expenses || data?.data || [];
 
-  useEffect(() => {
-    loadExpenses();
-  }, []);
+    setExpenses(Array.isArray(list) ? list : []);
+  } catch (error) {
+    console.error("Load expenses error:", error);
+
+    showNotice(
+      error.response?.data?.message ||
+        "Unable to load expenses. Check your API endpoint.",
+      "error"
+    );
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
+ useEffect(() => {
+  loadExpenses();
+}, [loadExpenses]);
 
   const normalizedExpenses = useMemo(
     () =>

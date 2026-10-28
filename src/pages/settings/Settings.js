@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
 import {
@@ -66,57 +66,55 @@ export default function Settings() {
   const [success, setSuccess] = useState("");
   const [invoiceNextNumber, setInvoiceNextNumber] = useState(null);
 
-  const getHeaders = () => {
-    const token = localStorage.getItem("token");
+ const getHeaders = () => {
+  const token = localStorage.getItem("token");
 
-    return {
-      Authorization: `Bearer ${token}`,
-    };
+  return {
+    Authorization: `Bearer ${token}`,
   };
+};
 
-  const loadSettings = async () => {
-    setLoading(true);
-    setError("");
-    setSuccess("");
+const loadSettings = useCallback(async () => {
+  setLoading(true);
+  setError("");
+  setSuccess("");
 
-    try {
-      const response = await axios.get(
-        `${API_URL}/business-settings`,
-        { headers: getHeaders() }
-      );
+  try {
+    const response = await axios.get(
+      `${API_URL}/business-settings`,
+      { headers: getHeaders() }
+    );
 
-      const business = response.data.business;
+    const business = response.data.business;
 
-      setForm({
-        business_name: business.business_name || "",
-        owner_name: business.owner_name || "",
-        mobile: business.mobile || "",
-        email: business.email || "",
-        address: business.address || "",
-        gst_number: business.gst_number || "",
-        pan_number: business.pan_number || "",
-        business_type: business.business_type || "",
-        state: business.state || "",
-        logo: business.logo || "",
-        invoice_prefix: business.invoice_prefix || "INV",
-      });
+    setForm({
+      business_name: business.business_name || "",
+      owner_name: business.owner_name || "",
+      mobile: business.mobile || "",
+      email: business.email || "",
+      address: business.address || "",
+      gst_number: business.gst_number || "",
+      pan_number: business.pan_number || "",
+      business_type: business.business_type || "",
+      state: business.state || "",
+      logo: business.logo || "",
+      invoice_prefix: business.invoice_prefix || "INV",
+    });
 
-      setInvoiceNextNumber(
-        business.invoice_next_number ?? 1
-      );
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
+    setInvoiceNextNumber(business.invoice_next_number ?? 1);
+  } catch (err) {
+    setError(
+      err.response?.data?.message ||
         "Unable to load business settings."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    );
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
+ useEffect(() => {
+  loadSettings();
+}, [loadSettings]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;

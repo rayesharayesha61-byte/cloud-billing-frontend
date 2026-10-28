@@ -2,6 +2,7 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  useCallback,
 } from "react";
 
 import jsPDF from "jspdf";
@@ -10,7 +11,7 @@ import autoTable from "jspdf-autotable";
 import {
   PictureAsPdf,
   Share,
-  WhatsApp,
+
 } from "@mui/icons-material";
 
 import {
@@ -39,7 +40,7 @@ import {
   Add,
   ArrowBack,
   Delete,
-  DescriptionOutlined,
+  // DescriptionOutlined,
  
   Inventory2Outlined,
   ReceiptLong,
@@ -239,22 +240,18 @@ const [createdInvoice, setCreatedInvoice] = useState(null);
   // PRODUCT FIND
   // ===================================================
 
-  const getProduct = (productId) => {
+ const getProduct = useCallback(
+  (productId) => {
     return products.find(
-      (product) =>
-        Number(product.id) ===
-        Number(productId)
+      (product) => Number(product.id) === Number(productId)
     );
-  };
+  },
+  [products]
+);
 
-  // ===================================================
-  // CALCULATE ITEM
-  // ===================================================
-
-  const calculateItem = (item) => {
-    const product = getProduct(
-      item.productId
-    );
+const calculateItem = useCallback(
+  (item) => {
+    const product = getProduct(item.productId);
 
     if (!product) {
       return {
@@ -268,34 +265,16 @@ const [createdInvoice, setCreatedInvoice] = useState(null);
       };
     }
 
-    const quantity =
-      Number(item.quantity) || 0;
+    const quantity = Number(item.quantity) || 0;
+    const price = Number(product.selling_price) || 0;
+    const gstPercent = Number(product.gst) || 0;
+    const discountPercent = Number(product.discount) || 0;
 
-    const price =
-      Number(product.selling_price) || 0;
-
-    const gstPercent =
-      Number(product.gst) || 0;
-
-    const discountPercent =
-      Number(product.discount) || 0;
-
-    const gross =
-      quantity * price;
-
-    const discount =
-      gross *
-      (discountPercent / 100);
-
-    const taxable =
-      gross - discount;
-
-    const gst =
-      taxable *
-      (gstPercent / 100);
-
-    const total =
-      taxable + gst;
+    const gross = quantity * price;
+    const discount = gross * (discountPercent / 100);
+    const taxable = gross - discount;
+    const gst = taxable * (gstPercent / 100);
+    const total = taxable + gst;
 
     return {
       product,
@@ -306,56 +285,45 @@ const [createdInvoice, setCreatedInvoice] = useState(null);
       gst,
       total,
     };
-  };
+  },
+  [getProduct]
+);
 
   // ===================================================
   // TOTALS
   // ===================================================
 
-  const totals = useMemo(() => {
-    let subtotal = 0;
+ const totals = useMemo(() => {
+  let subtotal = 0;
+  let gst = 0;
+  let lineDiscount = 0;
 
-    let gst = 0;
+  items.forEach((item) => {
+    const calculated = calculateItem(item);
 
-    let lineDiscount = 0;
+    subtotal += calculated.taxable;
+    gst += calculated.gst;
+    lineDiscount += calculated.discount;
+  });
 
-    items.forEach((item) => {
-      const calculated =
-        calculateItem(item);
+  const invoiceDiscount = Math.max(
+    0,
+    Number(discountAmount) || 0
+  );
 
-      subtotal += calculated.taxable;
+  const grandTotal = Math.max(
+    0,
+    subtotal + gst - invoiceDiscount
+  );
 
-      gst += calculated.gst;
-
-      lineDiscount +=
-        calculated.discount;
-    });
-
-    const invoiceDiscount =
-      Math.max(
-        0,
-        Number(discountAmount) || 0
-      );
-
-    const grandTotal = Math.max(
-      0,
-      subtotal +
-        gst -
-        invoiceDiscount
-    );
-
-    return {
-      subtotal,
-      gst,
-      lineDiscount,
-      invoiceDiscount,
-      grandTotal,
-    };
-  }, [
-    items,
-    products,
-    discountAmount,
-  ]);
+  return {
+    subtotal,
+    gst,
+    lineDiscount,
+    invoiceDiscount,
+    grandTotal,
+  };
+}, [items, calculateItem, discountAmount]);
 
   // ===================================================
   // SAVE INVOICE
