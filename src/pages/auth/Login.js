@@ -54,44 +54,106 @@ const Login = () => {
 
     setError("");
   };
+const handleSubmit = async (event) => {
+  event.preventDefault();
+  setError("");
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  if (!form.email.trim()) {
+    setError("Please enter your email address.");
+    return;
+  }
 
-    setError("");
+  if (!form.password) {
+    setError("Please enter your password.");
+    return;
+  }
 
-    if (!form.email.trim()) {
-      setError("Please enter your email address.");
-      return;
+  // Development-only shortcut.
+  // Production-ல் backend admin authentication பயன்படுத்தவும்.
+  if (
+    form.email.trim().toLowerCase() === "admin@gmail.com" &&
+    form.password === "123456"
+  ) {
+    login({
+      user: {
+        id: "super-admin",
+        email: "admin@gmail.com",
+        role: "super_admin",
+      },
+      role: "super_admin",
+      token: "development-admin-token",
+    });
+
+    navigate("/admin", { replace: true });
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const data = await loginUser({
+      email: form.email.trim(),
+      password: form.password,
+    });
+
+    login(data);
+
+    // Backend response-ல் role இருந்தால் அதன்படி redirect செய்யவும்.
+    const role = String(
+      data?.user?.role ?? data?.role ?? ""
+    ).toLowerCase();
+
+    if (role === "super_admin" || role === "admin") {
+      navigate("/admin-dashboard", { replace: true });
+    } else {
+      navigate("/dashboard", { replace: true });
     }
+  } catch (error) {
+    setError(
+      error.response?.data?.message ||
+        "Invalid email or password. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+  // const handleSubmit = async (event) => {
+  //   event.preventDefault();
 
-    if (!form.password) {
-      setError("Please enter your password.");
-      return;
-    }
+  //   setError("");
 
-    try {
-      setLoading(true);
+  //   if (!form.email.trim()) {
+  //     setError("Please enter your email address.");
+  //     return;
+  //   }
 
-      const data = await loginUser({
-        email: form.email.trim(),
-        password: form.password,
-      });
+  //   if (!form.password) {
+  //     setError("Please enter your password.");
+  //     return;
+  //   }
 
-      login(data);
+  //   try {
+  //     setLoading(true);
 
-      navigate("/dashboard", {
-        replace: true,
-      });
-    } catch (error) {
-      setError(
-        error.response?.data?.message ||
-          "Invalid email or password. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     const data = await loginUser({
+  //       email: form.email.trim(),
+  //       password: form.password,
+  //     });
+
+  //     login(data);
+
+  //     navigate("/dashboard", {
+  //       replace: true,
+  //     });
+  //   } catch (error) {
+  //     setError(
+  //       error.response?.data?.message ||
+  //         "Invalid email or password. Please try again."
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <Box
