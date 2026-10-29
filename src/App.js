@@ -1,165 +1,3 @@
-// import React from "react";
-// import {
-//   BrowserRouter,
-//   Routes,
-//   Route,
-//   Navigate,
-// } from "react-router-dom";
-
-// // PUBLIC
-// import Home from "./pages/public/Home";
-// import About from "./pages/public/About";
-// import Login from "./pages/auth/Login";
-// import Register from "./pages/auth/Register";
-
-// // APP
-
-// import Dashboard from "./pages/dashboard/Dashboard";
-
-
-// import Pricing from "./pages/public/Pricing";
-// import DashboardLayout from "./pages/dashboard/DashboardLayout";
-// import Customers from "./pages/customers/Customers";
-// import SmallBusiness from "./components/solutions/SmallBusiness";
-// import Retail from "./components/solutions/Retail";
-// import BusinessServices from "./components/solutions/BusinessServices";
-// import Contact from "./components/public/Contact";
-// import Features from "./components/public/Features";
-// import FAQ from "./components/public/FAQ";
-// // import InvoiceList from "./pages/billing/InvoiceList";
-// import Invoices from "./pages/billing/Invoices";
-// import CreateInvoice from "./pages/billing/CreateInvoice";
-// import Reports from "./pages/reports/Reports";
-//  import AdminPanel from "./pages/AdminPanel";
-// import Subscription from "./pages/subscription/Subscription";
-// import Settings from "./pages/settings/Settings";
-// import BusinessDetails from "./pages/BusinessDetails";
-// import ProtectedRoute from "./components/ProtectedRoute";
-// import Expenses from "./pages/expenses/Expenses";
-// import Products from "./pages/products/Products";
-// function App() {
-//   return (
-//     <BrowserRouter>
-
-//       <Routes>
-
-//         {/* ================= PUBLIC WEBSITE ================= */}
-
-//         <Route
-//           path="/"
-//           element={<Home />}
-//         />
-//         <Route
-//           path="/about"
-//           element={<About />
-          
-//           }
-//         />
-//         <Route
-//   path="/business-details"
-//   element={<BusinessDetails />}
-// />
-
-//         <Route path="/pricing" element={<Pricing />} />
-      
-//         <Route path="/solutions/small-business" element={<SmallBusiness />} />
-//         <Route path="/solutions/retail" element={<Retail />} />
-//         <Route path="/solutions/business-services" element={<BusinessServices />} />
-//         <Route path="/contact" element={<Contact />} />
-//         <Route path="/faq" element={<FAQ />} />
-//         <Route path="/features" element={<Features />} />
-//         <Route
-//           path="/login"
-//           element={<Login />}
-//         />
-
-//         <Route
-//           path="/register"
-//           element={<Register />}
-//         />
-
-//         {/* ================= PROTECTED APP ================= */}
-//  <Route element={<DashboardLayout />}>
-//         <Route
-//           path="/dashboard"
-//           element={<Dashboard />}
-//         />
-//   <Route
-//   path="/products"
-//   element={<Products />}
-// />
-//   <Route path="/customers" element={<Customers />} />
-//     <Route path="/expenses" element={<Expenses />} />
-//   <Route path="/invoices" element={<Invoices />} />
-//         <Route
-//           path="/products"
-//           element={
-//             <ProtectedRoute>
-//               <Products />
-//             </ProtectedRoute>
-//           }
-//         />
-
-//         <Route
-//           path="/customers"
-//           element={
-//             <ProtectedRoute>
-//               <Customers />
-//             </ProtectedRoute>
-//           }
-//         />
-
-//         <Route
-//           path="/billing/create"
-//           element={<CreateInvoice />}
-//         />
-
-//         <Route
-//           path="/create-invoice"
-//           element={
-//             <ProtectedRoute>
-//               <CreateInvoice />
-//             </ProtectedRoute>
-//           }
-//         />
-
-//        <Route path="/reports" element={<Reports />} />
-     
-
-
-// <Route path="/admin" element={<AdminPanel />} />
-
-// // Inside your existing Routes:
-// <Route path="/subscription" element={<Subscription />} />
-// <Route path="/settings" element={<Settings />} />
-//         <Route
-//           path="/expenses"
-//           element={
-//             <ProtectedRoute>
-//               <Expenses />
-//             </ProtectedRoute>
-//           }
-//         />
-
-       
-
-      
-
-//         {/* UNKNOWN URL */}
-
-//         <Route
-//           path="*"
-//           element={<Navigate to="/" replace />}
-//         />
-// </Route>
-//       </Routes>
- 
-//     </BrowserRouter>
-//   );
-// }
-
-// export default App;
-
 import React from "react";
 import {
   BrowserRouter,
@@ -168,114 +6,154 @@ import {
   Navigate,
 } from "react-router-dom";
 
-// Public pages
+// PUBLIC
 import Home from "./pages/public/Home";
 import About from "./pages/public/About";
-import Pricing from "./pages/public/Pricing";
-import Contact from "./components/public/Contact";
-import Features from "./components/public/Features";
-import FAQ from "./components/public/FAQ";
-
-// Authentication
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 
-// Solutions
+// APP
+
+import Dashboard from "./pages/dashboard/Dashboard";
+
+
+import Pricing from "./pages/public/Pricing";
+import DashboardLayout from "./pages/dashboard/DashboardLayout";
+import Customers from "./pages/customers/Customers";
 import SmallBusiness from "./components/solutions/SmallBusiness";
 import Retail from "./components/solutions/Retail";
 import BusinessServices from "./components/solutions/BusinessServices";
-
-// Dashboard
-import Dashboard from "./pages/dashboard/Dashboard";
-import DashboardLayout from "./pages/dashboard/DashboardLayout";
-import ProtectedRoute from "./components/ProtectedRoute";
-
-// App pages
-import Customers from "./pages/customers/Customers";
-import Products from "./pages/products/Products";
+import Contact from "./components/public/Contact";
+import Features from "./components/public/Features";
+import FAQ from "./components/public/FAQ";
+// import InvoiceList from "./pages/billing/InvoiceList";
 import Invoices from "./pages/billing/Invoices";
 import CreateInvoice from "./pages/billing/CreateInvoice";
 import Reports from "./pages/reports/Reports";
-import Expenses from "./pages/expenses/Expenses";
+ import AdminPanel from "./pages/AdminPanel";
 import Subscription from "./pages/subscription/Subscription";
 import Settings from "./pages/settings/Settings";
 import BusinessDetails from "./pages/BusinessDetails";
-
-// Admin
-import AdminPanel from "./pages/AdminPanel";
-
+import ProtectedRoute from "./components/ProtectedRoute";
+import Expenses from "./pages/expenses/Expenses";
+import Products from "./pages/products/Products";
 function App() {
   return (
     <BrowserRouter>
+
       <Routes>
-        {/* PUBLIC WEBSITE */}
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
+
+        {/* ================= PUBLIC WEBSITE ================= */}
+
+        <Route
+          path="/"
+          element={<Home />}
+        />
+        <Route
+          path="/about"
+          element={<About />
+          
+          }
+        />
+        <Route
+  path="/business-details"
+  element={<BusinessDetails />}
+/>
+
         <Route path="/pricing" element={<Pricing />} />
+      
+        <Route path="/solutions/small-business" element={<SmallBusiness />} />
+        <Route path="/solutions/retail" element={<Retail />} />
+        <Route path="/solutions/business-services" element={<BusinessServices />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/features" element={<Features />} />
         <Route path="/faq" element={<FAQ />} />
-
+        <Route path="/features" element={<Features />} />
         <Route
-          path="/solutions/small-business"
-          element={<SmallBusiness />}
-        />
-        <Route
-          path="/solutions/retail"
-          element={<Retail />}
-        />
-        <Route
-          path="/solutions/business-services"
-          element={<BusinessServices />}
+          path="/login"
+          element={<Login />}
         />
 
-        {/* AUTHENTICATION */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-
-        {/* BUSINESS DETAILS */}
         <Route
-          path="/business-details"
+          path="/register"
+          element={<Register />}
+        />
+
+        {/* ================= PROTECTED APP ================= */}
+ <Route element={<DashboardLayout />}>
+        <Route
+          path="/dashboard"
+          element={<Dashboard />}
+        />
+  <Route
+  path="/products"
+  element={<Products />}
+/>
+  <Route path="/customers" element={<Customers />} />
+    <Route path="/expenses" element={<Expenses />} />
+  <Route path="/invoices" element={<Invoices />} />
+        <Route
+          path="/products"
           element={
             <ProtectedRoute>
-              <BusinessDetails />
+              <Products />
             </ProtectedRoute>
           }
         />
 
-        {/* PROTECTED APP */}
         <Route
+          path="/customers"
           element={
             <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/expenses" element={<Expenses />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/billing/create" element={<CreateInvoice />} />
-          <Route path="/create-invoice" element={<CreateInvoice />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/subscription" element={<Subscription />} />
-          <Route path="/settings" element={<Settings />} />
-        </Route>
-
-        {/* ADMIN PANEL */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute adminOnly>
-              <AdminPanel />
+              <Customers />
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/billing/create"
+          element={<CreateInvoice />}
+        />
+
+        <Route
+          path="/create-invoice"
+          element={
+            <ProtectedRoute>
+              <CreateInvoice />
+            </ProtectedRoute>
+          }
+        />
+
+       <Route path="/reports" element={<Reports />} />
+     
+
+
+<Route path="/admin" element={<AdminPanel />} />
+
+// Inside your existing Routes:
+<Route path="/subscription" element={<Subscription />} />
+<Route path="/settings" element={<Settings />} />
+        <Route
+          path="/expenses"
+          element={
+            <ProtectedRoute>
+              <Expenses />
+            </ProtectedRoute>
+          }
+        />
+
+       
+
+      
 
         {/* UNKNOWN URL */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
+</Route>
       </Routes>
+ 
     </BrowserRouter>
   );
 }
