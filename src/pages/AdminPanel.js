@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 
@@ -10,110 +9,126 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  Divider,
   FormControl,
   InputLabel,
   MenuItem,
+  Paper,
   Select,
   Stack,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
   TextField,
   Typography,
 } from "@mui/material";
 
-import {
-  AdminPanelSettings,
-  Refresh,
-  PeopleAlt,
+import RefreshIcon from "@mui/icons-material/Refresh";
+import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
+import PaidOutlinedIcon from "@mui/icons-material/PaidOutlined";
+// import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
+import SearchIcon from "@mui/icons-material/Search";
 
-  PersonOff,
-  HourglassBottom,
-  EventBusy,
-  CurrencyRupee,
-  Search,
-  Assessment,
-} from "@mui/icons-material";
+const API_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
-const API_URL = (
-  process.env.REACT_APP_API_URL || "https://cloud-billing-backend.onrender.com/api"
-).replace(/\/+$/, "");
+const api = axios.create({ baseURL: API_URL });
 
-const PLANS = [
-  { value: "BASIC", label: "Basic - ₹299", amount: 299 },
-  { value: "PROFESSIONAL", label: "Professional - ₹599", amount: 599 },
-  { value: "BUSINESS", label: "Business - ₹999", amount: 999 },
-];
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
 
-const EMPTY_STATS = {
-  totalUsers: 0,
-  activeUsers: 0,
-  inactiveUsers: 0,
-  trialUsers: 0,
-  expiredUsers: 0,
-  monthlyActiveAmount: 0,
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+const PLANS = {
+  BASIC: 299,
+  PROFESSIONAL: 599,
+  BUSINESS: 999,
 };
 
-function getPayload(response) {
-  const body = response?.data;
-  return body?.data ?? body ?? {};
-}
-
-function formatMoney(value) {
-  return Number(value || 0).toLocaleString("en-IN", {
+const money = (value) =>
+  new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  });
-}
+  }).format(Number(value || 0));
 
-function getErrorMessage(error) {
-  return (
-    error?.response?.data?.message ||
-    error?.message ||
-    "Something went wrong. Please try again."
-  );
-}
+const date = (value) => {
+  if (!value) return "—";
 
-function StatCard({ title, value, icon, color }) {
+  const raw = String(value).slice(0, 10);
+  const parts = raw.split("-");
+
+  if (parts.length === 3 && parts[0].length === 4) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+
+  return "—";
+};
+
+const chipColor = (value) => {
+  const status = String(value || "").toUpperCase();
+
+  if (status === "ACTIVE") return "success";
+  if (status === "TRIAL") return "info";
+  if (status === "EXPIRED") return "error";
+  if (status === "CANCELLED") return "default";
+
+  return "default";
+};
+
+function StatCard({ title, value, subtitle, icon: Icon }) {
   return (
     <Card
-      elevation={0}
-      sx={{
-        height: "100%",
-        border: "1px solid #e5e7eb",
-        borderRadius: 3,
-      }}
+      variant="outlined"
+      sx={{ borderRadius: 3, height: "100%", bgcolor: "#fff" }}
     >
       <CardContent>
-        <Stack direction="row" justifyContent="space-between" spacing={2}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          spacing={2}
+        >
           <Box>
-            <Typography color="text.secondary" variant="body2">
+            <Typography variant="body2" color="text.secondary">
               {title}
             </Typography>
-            <Typography variant="h5" fontWeight={700} sx={{ mt: 1 }}>
-              {value}
+
+            <Typography variant="h4" fontWeight={800} sx={{ my: 1 }}>
+              {value ?? 0}
             </Typography>
+
+            {subtitle && (
+              <Typography variant="caption" color="text.secondary">
+                {subtitle}
+              </Typography>
+            )}
           </Box>
 
           <Box
             sx={{
               width: 46,
               height: 46,
+              display: "grid",
+              placeItems: "center",
+              bgcolor: "#eef2ff",
+              color: "#3949ab",
               borderRadius: 2,
-              bgcolor: `${color}18`,
-              color,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               flexShrink: 0,
             }}
           >
-            {icon}
+            <Icon />
           </Box>
         </Stack>
       </CardContent>
@@ -121,274 +136,173 @@ function StatCard({ title, value, icon, color }) {
   );
 }
 
-function StatusChip({ status }) {
-  const value = String(status || "UNKNOWN").toUpperCase();
-
-  const color =
-    value === "ACTIVE"
-      ? "success"
-      : value === "TRIAL"
-      ? "info"
-      : value === "EXPIRED" || value === "INACTIVE"
-      ? "error"
-      : "default";
-
-  return <Chip label={value} color={color} size="small" />;
-}
-
 export default function AdminPanel() {
-  const [stats, setStats] = useState(EMPTY_STATS);
+  const [tab, setTab] = useState(0);
+  const [dashboard, setDashboard] = useState(null);
   const [users, setUsers] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
-  const [reports, setReports] = useState({});
+  const [reports, setReports] = useState(null);
+
   const [search, setSearch] = useState("");
+  const [userFilter, setUserFilter] = useState("ALL");
+  const [drafts, setDrafts] = useState({});
+
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState("");
+  const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  const api = axios.create({
-    baseURL: API_URL,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-
-  api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  });
-
-  const loadAdminData = useCallback(async () => {
+  const loadAll = useCallback(async () => {
     setLoading(true);
     setError("");
-    setNotice("");
-
-    const endpoints = [
-      { key: "dashboard", url: "/admin/dashboard" },
-      { key: "users", url: "/admin/users" },
-      { key: "subscriptions", url: "/admin/subscriptions" },
-      { key: "reports", url: "/admin/reports" },
-    ];
 
     try {
-      const results = await Promise.allSettled(
-        endpoints.map((item) => api.get(item.url))
-      );
+      const [d, u, s, r] = await Promise.all([
+        api.get("/admin/dashboard"),
+        api.get("/admin/users"),
+        api.get("/admin/subscriptions"),
+        api.get("/admin/reports"),
+      ]);
 
-      const resultMap = {};
-
-      results.forEach((result, index) => {
-        resultMap[endpoints[index].key] = result;
-      });
-
-      const dashboardResult = resultMap.dashboard;
-      const usersResult = resultMap.users;
-      const subscriptionsResult = resultMap.subscriptions;
-      const reportsResult = resultMap.reports;
-
-      if (dashboardResult.status === "fulfilled") {
-        const data = getPayload(dashboardResult.value);
-
-        setStats({
-          ...EMPTY_STATS,
-          ...(data.stats || data),
-        });
-      }
-
-      if (usersResult.status === "fulfilled") {
-        const data = getPayload(usersResult.value);
-
-        setUsers(
-          Array.isArray(data)
-            ? data
-            : Array.isArray(data.users)
-            ? data.users
-            : []
-        );
-      }
-
-      if (subscriptionsResult.status === "fulfilled") {
-        const data = getPayload(subscriptionsResult.value);
-
-        setSubscriptions(
-          Array.isArray(data)
-            ? data
-            : Array.isArray(data.subscriptions)
-            ? data.subscriptions
-            : []
-        );
-      }
-
-      if (reportsResult.status === "fulfilled") {
-        setReports(getPayload(reportsResult.value));
-      }
-
-      const failed = results
-        .map((result, index) =>
-          result.status === "rejected"
-            ? `${endpoints[index].url}: ${getErrorMessage(result.reason)}`
-            : null
-        )
-        .filter(Boolean);
-
-      if (failed.length === endpoints.length) {
-        setError(failed.join(" | "));
-      } else if (failed.length > 0) {
-        setError(`Some admin data could not load: ${failed.join(" | ")}`);
-      }
+      setDashboard(d.data);
+      setUsers(u.data.users || []);
+      setSubscriptions(s.data.subscriptions || []);
+      setReports(r.data);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(
+        err.response?.data?.message ||
+          "Cannot load Admin Panel. Check login, API URL and admin permissions."
+      );
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadAdminData();
-  }, [loadAdminData]);
-
-  const handleUserStatus = async (user) => {
-    const userId = user.id ?? user.user_id;
-
-    if (!userId) {
-      setError("User ID is missing. Check the /admin/users API response.");
-      return;
-    }
-
-    const currentActive =
-      Number(user.is_active) === 1 ||
-      user.is_active === true ||
-      String(user.is_active).toLowerCase() === "true";
-
-    const nextActive = !currentActive;
-
-    setActionLoading(`user-${userId}`);
-    setError("");
-    setNotice("");
-
-    try {
-      await api.patch(`/admin/users/${userId}/status`, {
-        isActive: nextActive,
-      });
-
-      setUsers((previous) =>
-        previous.map((item) =>
-          String(item.id ?? item.user_id) === String(userId)
-            ? { ...item, is_active: nextActive ? 1 : 0 }
-            : item
-        )
-      );
-
-      setNotice(
-        `User ${nextActive ? "activated" : "deactivated"} successfully.`
-      );
-
-      await loadAdminData();
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setActionLoading("");
-    }
-  };
-
-  const handleSubscriptionChange = async (subscription, field, value) => {
-    const userId =
-      subscription.user_id ??
-      subscription.userId ??
-      subscription.id;
-
-    if (!userId) {
-      setError(
-        "Subscription user ID is missing. Check the /admin/subscriptions API response."
-      );
-      return;
-    }
-
-    const currentPlan =
-      subscription.plan_name || subscription.plan || "BASIC";
-
-    const currentStatus = subscription.status || "TRIAL";
-
-    const nextPlan = field === "plan" ? value : currentPlan;
-    const nextStatus = field === "status" ? value : currentStatus;
-
-    setActionLoading(`subscription-${userId}`);
-    setError("");
-    setNotice("");
-
-    try {
-      await api.patch(`/admin/subscriptions/${userId}`, {
-        plan: nextPlan,
-        status: nextStatus,
-      });
-
-      setNotice("Subscription updated successfully.");
-      await loadAdminData();
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setActionLoading("");
-    }
-  };
+    loadAll();
+  }, [loadAll]);
 
   const filteredUsers = users.filter((user) => {
     const term = search.trim().toLowerCase();
 
-    if (!term) return true;
+    const matchesSearch =
+      !term ||
+      [user.id, user.business_id, user.name, user.email].some((value) =>
+        String(value ?? "").toLowerCase().includes(term)
+      );
 
-    return [
-      user.name,
-      user.owner_name,
-      user.email,
-      user.business_name,
-      user.mobile,
-      user.phone,
-    ].some((value) => String(value || "").toLowerCase().includes(term));
+    const matchesFilter =
+      userFilter === "ALL" ||
+      (userFilter === "ACTIVE" && Number(user.is_active) === 1) ||
+      (userFilter === "INACTIVE" && Number(user.is_active) === 0) ||
+      (userFilter === "TRIAL" &&
+        String(user.subscription_status).toUpperCase() === "TRIAL") ||
+      (userFilter === "EXPIRED" &&
+        String(user.subscription_status).toUpperCase() === "EXPIRED");
+
+    return matchesSearch && matchesFilter;
   });
 
-  const summary = reports.summary || {};
-  const planBreakdown = Array.isArray(reports.planBreakdown)
-    ? reports.planBreakdown
-    : [];
-  const monthlyRegistrations = Array.isArray(reports.monthlyRegistrations)
-    ? reports.monthlyRegistrations
-    : [];
+  const toggleUser = async (user) => {
+    const next = Number(user.is_active) !== 1;
 
-  const monthlyMax = Math.max(
-    1,
-    ...monthlyRegistrations.map((item) =>
-      Number(item.total ?? item.count ?? item.registrations ?? 0)
-    )
-  );
+    if (
+      !window.confirm(
+        `${next ? "Activate" : "Deactivate"} account for ${
+          user.name || user.email
+        }?`
+      )
+    ) {
+      return;
+    }
 
-  if (loading) {
+    setBusyId(user.id);
+    setError("");
+    setNotice("");
+
+    try {
+      const { data } = await api.patch(
+        `/admin/users/${user.id}/status`,
+        { isActive: next }
+      );
+
+      setNotice(data.message || "Account status updated.");
+      await loadAll();
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Failed to update account status."
+      );
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const getDraft = (row) =>
+    drafts[row.user_id] || {
+      plan: row.plan_name || "BASIC",
+      status: row.status || "TRIAL",
+    };
+
+  const updateDraft = (userId, field, value) => {
+    setDrafts((old) => ({
+      ...old,
+      [userId]: {
+        ...getDraft(
+          subscriptions.find((row) => row.user_id === userId) || {
+            user_id: userId,
+            plan_name: "BASIC",
+            status: "TRIAL",
+          }
+        ),
+        ...old[userId],
+        [field]: value,
+      },
+    }));
+  };
+
+  const saveSubscription = async (row) => {
+    const draft = getDraft(row);
+
+    setBusyId(`sub-${row.user_id}`);
+    setError("");
+    setNotice("");
+
+    try {
+      const { data } = await api.patch(
+        `/admin/subscriptions/${row.user_id}`,
+        {
+          plan: draft.plan,
+          status: draft.status,
+        }
+      );
+
+      setNotice(data.message || "Subscription updated.");
+      await loadAll();
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Failed to update subscription."
+      );
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (loading && !dashboard) {
     return (
-      <Box
-        sx={{
-          minHeight: "60vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 2,
-        }}
-      >
+      <Box sx={{ minHeight: 300, display: "grid", placeItems: "center" }}>
         <CircularProgress />
-        <Typography color="text.secondary">
-          Loading Admin Dashboard...
-        </Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: "#f8fafc", minHeight: "100vh" }}>
+    <Box
+      sx={{
+        p: { xs: 1.5, md: 3 },
+        minHeight: "100%",
+        bgcolor: "#f7f8fc",
+      }}
+    >
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
@@ -396,43 +310,28 @@ export default function AdminPanel() {
         spacing={2}
         sx={{ mb: 3 }}
       >
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Box
-            sx={{
-              bgcolor: "#e0e7ff",
-              color: "#3730a3",
-              width: 48,
-              height: 48,
-              borderRadius: 2,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <AdminPanelSettings fontSize="large" />
-          </Box>
+        <Box>
+          <Typography variant="h4" fontWeight={800}>
+            Admin Panel
+          </Typography>
 
-          <Box>
-            <Typography variant="h5" fontWeight={800}>
-              Admin Dashboard
-            </Typography>
-            <Typography color="text.secondary" variant="body2">
-              Cloud Billing Software Management
-            </Typography>
-          </Box>
-        </Stack>
+          <Typography color="text.secondary">
+            Manage CloudBill users, businesses and subscriptions.
+          </Typography>
+        </Box>
 
         <Button
-          variant="contained"
-          startIcon={<Refresh />}
-          onClick={loadAdminData}
+          variant="outlined"
+          startIcon={<RefreshIcon />}
+          onClick={loadAll}
+          disabled={loading}
         >
-          Refresh Data
+          Refresh data
         </Button>
       </Stack>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
           {error}
         </Alert>
       )}
@@ -440,8 +339,8 @@ export default function AdminPanel() {
       {notice && (
         <Alert
           severity="success"
-          onClose={() => setNotice("")}
           sx={{ mb: 2 }}
+          onClose={() => setNotice("")}
         >
           {notice}
         </Alert>
@@ -452,483 +351,438 @@ export default function AdminPanel() {
           display: "grid",
           gridTemplateColumns: {
             xs: "1fr",
-            sm: "repeat(2, minmax(0, 1fr))",
-            lg: "repeat(3, minmax(0, 1fr))",
+            sm: "repeat(2, 1fr)",
+            lg: "repeat(4, 1fr)",
           },
           gap: 2,
           mb: 3,
         }}
       >
         <StatCard
-          title="Total Users"
-          value={stats.totalUsers ?? 0}
-          icon={<PeopleAlt />}
-          color="#4f46e5"
+          title="Total Users / Businesses"
+          value={dashboard?.stats?.totalUsers}
+          subtitle="Registered accounts"
+          icon={BusinessOutlinedIcon}
         />
+
         <StatCard
-          title="Active Users"
-          value={stats.activeUsers ?? 0}
-         icon={<PersonOff />}
-          color="#15803d"
+          title="Active Accounts"
+          value={dashboard?.stats?.activeUsers}
+          subtitle={`${dashboard?.stats?.inactiveUsers || 0} deactivated`}
+          icon={PeopleAltOutlinedIcon}
         />
+
         <StatCard
-          title="Inactive Users"
-          value={stats.inactiveUsers ?? 0}
-          icon={<PersonOff />}
-          color="#dc2626"
+          title="Trial Accounts"
+          value={dashboard?.stats?.trialUsers}
+          subtitle={`${dashboard?.stats?.expiredUsers || 0} expired`}
+        //   icon={CheckCircleOutlineIcon}
         />
+
         <StatCard
-          title="Trial Users"
-          value={stats.trialUsers ?? 0}
-          icon={<HourglassBottom />}
-          color="#0284c7"
-        />
-        <StatCard
-          title="Expired Users"
-          value={stats.expiredUsers ?? 0}
-          icon={<EventBusy />}
-          color="#ea580c"
-        />
-        <StatCard
-          title="Monthly Active Amount"
-          value={formatMoney(stats.monthlyActiveAmount)}
-          icon={<CurrencyRupee />}
-          color="#7c3aed"
+          title="Active Plan Amount"
+          value={money(dashboard?.stats?.monthlyActiveAmount)}
+          subtitle="Active subscription amounts"
+          icon={PaidOutlinedIcon}
         />
       </Box>
 
-      <Card
-        elevation={0}
-        sx={{ border: "1px solid #e5e7eb", borderRadius: 3, mb: 3 }}
-      >
-        <CardContent>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            alignItems={{ xs: "stretch", sm: "center" }}
-            justifyContent="space-between"
-            spacing={2}
-            sx={{ mb: 2 }}
-          >
-            <Typography variant="h6" fontWeight={700}>
-              User Management
-            </Typography>
-
-            <TextField
-              size="small"
-              placeholder="Search users..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              sx={{ width: { xs: "100%", sm: 300 } }}
-              InputProps={{
-                startAdornment: <Search sx={{ mr: 1, color: "gray" }} />,
-              }}
-            />
-          </Stack>
-
-          <TableContainer sx={{ overflowX: "auto" }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Business / User</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Plan</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Account</TableCell>
-                  <TableCell align="right">Action</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {filteredUsers.map((user) => {
-                  const id = user.id ?? user.user_id;
-                  const active =
-                    Number(user.is_active) === 1 ||
-                    user.is_active === true ||
-                    String(user.is_active).toLowerCase() === "true";
-
-                  return (
-                    <TableRow key={id ?? user.email}>
-                      <TableCell>
-                        <Typography fontWeight={600}>
-                          {user.business_name ||
-                            user.name ||
-                            user.owner_name ||
-                            "Unnamed User"}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          ID: {id ?? "-"}
-                        </Typography>
-                      </TableCell>
-
-                      <TableCell>{user.email || "-"}</TableCell>
-
-                      <TableCell>
-                        {user.plan_name || user.plan || "-"}
-                      </TableCell>
-
-                      <TableCell>
-                        <StatusChip
-                          status={
-                            user.subscription_status ||
-                            user.status ||
-                            "UNKNOWN"
-                          }
-                        />
-                      </TableCell>
-
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={active ? "Active" : "Inactive"}
-                          color={active ? "success" : "default"}
-                        />
-                      </TableCell>
-
-                      <TableCell align="right">
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color={active ? "error" : "success"}
-                          disabled={actionLoading === `user-${id}`}
-                          onClick={() => handleUserStatus(user)}
-                        >
-                          {actionLoading === `user-${id}`
-                            ? "Saving..."
-                            : active
-                            ? "Deactivate"
-                            : "Activate"}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-
-                {filteredUsers.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                      No users found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
-
-      <Card
-        elevation={0}
-        sx={{ border: "1px solid #e5e7eb", borderRadius: 3, mb: 3 }}
-      >
-        <CardContent>
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-            Subscription Management
-          </Typography>
-
-          <TableContainer sx={{ overflowX: "auto" }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Business / User</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Plan</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Update</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {subscriptions.map((sub, index) => {
-                  const userId =
-                    sub.user_id ?? sub.userId ?? sub.id;
-
-                  return (
-                    <TableRow key={userId ?? index}>
-                      <TableCell>
-                        {sub.business_name ||
-                          sub.name ||
-                          sub.owner_name ||
-                          "Unnamed User"}
-                      </TableCell>
-
-                      <TableCell>{sub.email || "-"}</TableCell>
-
-                      <TableCell sx={{ minWidth: 180 }}>
-                        <FormControl size="small" fullWidth>
-                          <InputLabel>Plan</InputLabel>
-                          <Select
-                            label="Plan"
-                            value={String(
-                              sub.plan_name || sub.plan || "BASIC"
-                            ).toUpperCase()}
-                            disabled={
-                              actionLoading === `subscription-${userId}`
-                            }
-                            onChange={(event) =>
-                              handleSubscriptionChange(
-                                sub,
-                                "plan",
-                                event.target.value
-                              )
-                            }
-                          >
-                            {PLANS.map((plan) => (
-                              <MenuItem
-                                key={plan.value}
-                                value={plan.value}
-                              >
-                                {plan.label}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </TableCell>
-
-                      <TableCell sx={{ minWidth: 140 }}>
-                        <FormControl size="small" fullWidth>
-                          <InputLabel>Status</InputLabel>
-                          <Select
-                            label="Status"
-                            value={String(sub.status || "TRIAL").toUpperCase()}
-                            disabled={
-                              actionLoading === `subscription-${userId}`
-                            }
-                            onChange={(event) =>
-                              handleSubscriptionChange(
-                                sub,
-                                "status",
-                                event.target.value
-                              )
-                            }
-                          >
-                            {["TRIAL", "ACTIVE", "EXPIRED", "CANCELLED"].map(
-                              (status) => (
-                                <MenuItem key={status} value={status}>
-                                  {status}
-                                </MenuItem>
-                              )
-                            )}
-                          </Select>
-                        </FormControl>
-                      </TableCell>
-
-                      <TableCell>
-                        {actionLoading === `subscription-${userId}` ? (
-                          <CircularProgress size={20} />
-                        ) : (
-                          <Typography variant="caption" color="text.secondary">
-                            Auto-saved
-                          </Typography>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-
-                {subscriptions.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                      No subscriptions found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
-
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
-          gap: 2,
-        }}
-      >
-        <Card
-          elevation={0}
-          sx={{ border: "1px solid #e5e7eb", borderRadius: 3 }}
+      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: "hidden" }}>
+        <Tabs
+          value={tab}
+          onChange={(_, value) => setTab(value)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ px: 1, borderBottom: 1, borderColor: "divider" }}
         >
-          <CardContent>
-            <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-              <Assessment color="primary" />
-              <Typography variant="h6" fontWeight={700}>
-                Reports Summary
-              </Typography>
-            </Stack>
+          <Tab label="Dashboard" />
+          <Tab label="Users & Businesses" />
+          <Tab label="Subscriptions" />
+          <Tab label="Reports" />
+        </Tabs>
 
-            <Stack spacing={1.5}>
-              <Stack direction="row" justifyContent="space-between">
-                <Typography color="text.secondary">
-                  Total Registrations
-                </Typography>
-                <Typography fontWeight={700}>
-                  {summary.totalUsers ?? stats.totalUsers ?? 0}
-                </Typography>
-              </Stack>
-
-              <Divider />
-
-              <Stack direction="row" justifyContent="space-between">
-                <Typography color="text.secondary">
-                  Active Subscriptions
-                </Typography>
-                <Typography fontWeight={700}>
-                  {summary.activeSubscriptions ??
-                    summary.activeUsers ??
-                    stats.activeUsers ??
-                    0}
-                </Typography>
-              </Stack>
-
-              <Divider />
-
-              <Stack direction="row" justifyContent="space-between">
-                <Typography color="text.secondary">
-                  Monthly Active Amount
-                </Typography>
-                <Typography fontWeight={700}>
-                  {formatMoney(
-                    summary.monthlyActiveAmount ?? stats.monthlyActiveAmount
-                  )}
-                </Typography>
-              </Stack>
-            </Stack>
-          </CardContent>
-        </Card>
-
-        <Card
-          elevation={0}
-          sx={{ border: "1px solid #e5e7eb", borderRadius: 3 }}
-        >
-          <CardContent>
-            <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-              Plan Breakdown
-            </Typography>
-
-            {planBreakdown.length === 0 ? (
-              <Typography color="text.secondary" variant="body2">
-                No plan report data available.
-              </Typography>
-            ) : (
-              <Stack spacing={2}>
-                {planBreakdown.map((item, index) => {
-                  const count = Number(
-                    item.total ?? item.count ?? item.users ?? 0
-                  );
-
-                  return (
-                    <Box key={item.plan_name || item.plan || index}>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        sx={{ mb: 0.5 }}
-                      >
-                        <Typography variant="body2">
-                          {item.plan_name || item.plan || "Other"}
-                        </Typography>
-                        <Typography variant="body2" fontWeight={700}>
-                          {count}
-                        </Typography>
-                      </Stack>
-
-                      <Box
-                        sx={{
-                          height: 8,
-                          bgcolor: "#e5e7eb",
-                          borderRadius: 5,
-                          overflow: "hidden",
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            height: "100%",
-                            width: `${
-                              stats.totalUsers > 0
-                                ? Math.min(
-                                    100,
-                                    (count / stats.totalUsers) * 100
-                                  )
-                                : 0
-                            }%`,
-                            bgcolor: ["#4f46e5", "#0891b2", "#16a34a"][
-                              index % 3
-                            ],
-                            borderRadius: 5,
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Stack>
-            )}
-          </CardContent>
-        </Card>
-      </Box>
-
-      <Card
-        elevation={0}
-        sx={{ border: "1px solid #e5e7eb", borderRadius: 3, mt: 2 }}
-      >
-        <CardContent>
-          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-            Monthly Registrations
-          </Typography>
-
-          {monthlyRegistrations.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No monthly registration data available.
-            </Typography>
-          ) : (
+        <Box sx={{ p: { xs: 1.5, md: 2.5 } }}>
+          {tab === 0 && (
             <Stack spacing={2}>
-              {monthlyRegistrations.map((item, index) => {
-                const count = Number(
-                  item.total ?? item.count ?? item.registrations ?? 0
-                );
+              <Typography variant="h6" fontWeight={700}>
+                Recently registered accounts
+              </Typography>
 
-                return (
-                  <Box key={item.month || item.label || index}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      sx={{ mb: 0.5 }}
-                    >
-                      <Typography variant="body2">
-                        {item.month || item.label || `Month ${index + 1}`}
-                      </Typography>
-                      <Typography variant="body2" fontWeight={700}>
-                        {count}
-                      </Typography>
-                    </Stack>
-
-                    <Box
-                      sx={{
-                        height: 10,
-                        bgcolor: "#e5e7eb",
-                        borderRadius: 5,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          height: "100%",
-                          width: `${Math.min(
-                            100,
-                            (count / monthlyMax) * 100
-                          )}%`,
-                          bgcolor: "#4f46e5",
-                          borderRadius: 5,
-                        }}
-                      />
-                    </Box>
-                  </Box>
-                );
-              })}
+              <UserTable
+                rows={dashboard?.recentUsers || []}
+                busyId={busyId}
+                onToggle={toggleUser}
+              />
             </Stack>
           )}
-        </CardContent>
-      </Card>
+
+          {tab === 1 && (
+            <Stack spacing={2}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search name, email, user ID or business ID"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ mr: 1 }} />,
+                }}
+              />
+
+              <FormControl size="small" sx={{ maxWidth: 260 }}>
+                <InputLabel>Account filter</InputLabel>
+                <Select
+                  label="Account filter"
+                  value={userFilter}
+                  onChange={(e) => setUserFilter(e.target.value)}
+                >
+                  <MenuItem value="ALL">All accounts</MenuItem>
+                  <MenuItem value="ACTIVE">Active accounts</MenuItem>
+                  <MenuItem value="INACTIVE">Deactivated accounts</MenuItem>
+                  <MenuItem value="TRIAL">Trial accounts</MenuItem>
+                  <MenuItem value="EXPIRED">Expired accounts</MenuItem>
+                </Select>
+              </FormControl>
+
+              <UserTable
+                rows={filteredUsers}
+                busyId={busyId}
+                onToggle={toggleUser}
+              />
+            </Stack>
+          )}
+
+          {tab === 2 && (
+            <SubscriptionTable
+              rows={subscriptions}
+              getDraft={getDraft}
+              updateDraft={updateDraft}
+              saveSubscription={saveSubscription}
+              busyId={busyId}
+            />
+          )}
+
+          {tab === 3 && (
+            <Stack spacing={3}>
+              <Typography variant="h6" fontWeight={700}>
+                Reports
+              </Typography>
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    sm: "repeat(3, 1fr)",
+                  },
+                  gap: 2,
+                }}
+              >
+                <StatCard
+                  title="Total Users"
+                  value={reports?.summary?.totalUsers}
+                  icon={PeopleAltOutlinedIcon}
+                />
+
+                <StatCard
+                  title="Active Accounts"
+                  value={reports?.summary?.activeUsers}
+                //   icon={CheckCircleOutlineIcon}
+                />
+
+                <StatCard
+                  title="Inactive Accounts"
+                  value={reports?.summary?.inactiveUsers}
+                  icon={BlockOutlinedIcon}
+                />
+              </Box>
+
+              <Typography fontWeight={700}>
+                Subscriptions by plan and status
+              </Typography>
+
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Plan</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell align="right">Accounts</TableCell>
+                      <TableCell align="right">Total Amount</TableCell>
+                    </TableRow>
+                  </TableHead>
+
+                  <TableBody>
+                    {(reports?.planBreakdown || []).map((row, index) => (
+                      <TableRow key={`${row.plan}-${row.status}-${index}`}>
+                        <TableCell>{row.plan}</TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={row.status}
+                            color={chipColor(row.status)}
+                          />
+                        </TableCell>
+                        <TableCell align="right">{row.total}</TableCell>
+                        <TableCell align="right">
+                          {money(row.amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+
+                    {!reports?.planBreakdown?.length && (
+                      <TableRow>
+                        <TableCell colSpan={4} align="center">
+                          No subscription report data available.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              <Typography fontWeight={700}>
+                Monthly registrations
+              </Typography>
+
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Month</TableCell>
+                      <TableCell align="right">New accounts</TableCell>
+                    </TableRow>
+                  </TableHead>
+
+                  <TableBody>
+                    {(reports?.monthlyRegistrations || []).map((row) => (
+                      <TableRow key={row.month}>
+                        <TableCell>{row.month}</TableCell>
+                        <TableCell align="right">{row.total}</TableCell>
+                      </TableRow>
+                    ))}
+
+                    {!reports?.monthlyRegistrations?.length && (
+                      <TableRow>
+                        <TableCell colSpan={2} align="center">
+                          No registration data available.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Stack>
+          )}
+        </Box>
+      </Paper>
     </Box>
+  );
+}
+
+function UserTable({ rows, onToggle, busyId }) {
+  return (
+    <TableContainer sx={{ maxHeight: 560 }}>
+      <Table size="small" stickyHeader>
+        <TableHead>
+          <TableRow>
+            <TableCell>ID</TableCell>
+            <TableCell>Business ID</TableCell>
+            <TableCell>Name / Email</TableCell>
+            <TableCell>Role</TableCell>
+            <TableCell>Plan / Trial end</TableCell>
+            <TableCell>Account</TableCell>
+            <TableCell align="right">Action</TableCell>
+          </TableRow>
+        </TableHead>
+
+        <TableBody>
+          {rows.map((user) => (
+            <TableRow hover key={user.id}>
+              <TableCell>{user.id}</TableCell>
+              <TableCell>{user.business_id ?? "—"}</TableCell>
+
+              <TableCell>
+                <Typography variant="body2" fontWeight={600}>
+                  {user.name || "—"}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {user.email}
+                </Typography>
+              </TableCell>
+
+              <TableCell>
+                <Chip
+                  size="small"
+                  label={user.role || "USER"}
+                  variant="outlined"
+                />
+              </TableCell>
+
+              <TableCell>
+                <Typography variant="body2">
+                  {user.plan_name || user.plan || "FREE_TRIAL"}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Ends {date(user.trial_end_date)}
+                </Typography>
+              </TableCell>
+
+              <TableCell>
+                <Chip
+                  size="small"
+                  label={
+                    Number(user.is_active) === 1 ? "ACTIVE" : "DEACTIVATED"
+                  }
+                  color={Number(user.is_active) === 1 ? "success" : "error"}
+                />
+              </TableCell>
+
+              <TableCell align="right">
+                <Button
+                  size="small"
+                  color={Number(user.is_active) === 1 ? "error" : "success"}
+                  disabled={
+                    busyId === user.id ||
+                    String(user.role).toUpperCase() === "ADMIN"
+                  }
+                  startIcon={
+                    busyId === user.id ? (
+                      <CircularProgress size={14} />
+                    ) : Number(user.is_active) === 1 ? (
+                      <BlockOutlinedIcon />
+                    ) : (
+                    <BlockOutlinedIcon />
+                    )
+                  }
+                  onClick={() => onToggle(user)}
+                >
+                  {Number(user.is_active) === 1 ? "Deactivate" : "Activate"}
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+
+          {!rows.length && (
+            <TableRow>
+              <TableCell colSpan={7} align="center">
+                No accounts found.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+}
+
+function SubscriptionTable({
+  rows,
+  getDraft,
+  updateDraft,
+  saveSubscription,
+  busyId,
+}) {
+  return (
+    <TableContainer sx={{ maxHeight: 560 }}>
+      <Table size="small" stickyHeader>
+        <TableHead>
+          <TableRow>
+            <TableCell>User</TableCell>
+            <TableCell>Business ID</TableCell>
+            <TableCell>Plan</TableCell>
+            <TableCell>Amount</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Trial end</TableCell>
+            <TableCell>Next billing</TableCell>
+            <TableCell>Save</TableCell>
+          </TableRow>
+        </TableHead>
+
+        <TableBody>
+          {rows.map((row) => {
+            const draft = getDraft(row);
+
+            return (
+              <TableRow key={row.subscription_id}>
+                <TableCell>
+                  <Typography variant="body2" fontWeight={600}>
+                    {row.name || "—"}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {row.email}
+                  </Typography>
+                </TableCell>
+
+                <TableCell>{row.business_id ?? "—"}</TableCell>
+
+                <TableCell>
+                  <FormControl size="small" sx={{ minWidth: 145 }}>
+                    <Select
+                      value={draft.plan}
+                      onChange={(e) =>
+                        updateDraft(row.user_id, "plan", e.target.value)
+                      }
+                    >
+                      <MenuItem value="BASIC">Basic</MenuItem>
+                      <MenuItem value="PROFESSIONAL">Professional</MenuItem>
+                      <MenuItem value="BUSINESS">Business</MenuItem>
+                    </Select>
+                  </FormControl>
+                </TableCell>
+
+                <TableCell>{money(PLANS[draft.plan])}/mo</TableCell>
+
+                <TableCell>
+                  <FormControl size="small" sx={{ minWidth: 125 }}>
+                    <Select
+                      value={draft.status}
+                      onChange={(e) =>
+                        updateDraft(row.user_id, "status", e.target.value)
+                      }
+                    >
+                      {["TRIAL", "ACTIVE", "EXPIRED", "CANCELLED"].map(
+                        (status) => (
+                          <MenuItem key={status} value={status}>
+                            {status}
+                          </MenuItem>
+                        )
+                      )}
+                    </Select>
+                  </FormControl>
+                </TableCell>
+
+                <TableCell>{date(row.trial_end_date)}</TableCell>
+                <TableCell>{date(row.next_billing_date)}</TableCell>
+
+                <TableCell>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    disabled={busyId === `sub-${row.user_id}`}
+                    onClick={() => saveSubscription(row)}
+                  >
+                    {busyId === `sub-${row.user_id}` ? (
+                      <CircularProgress size={18} color="inherit" />
+                    ) : (
+                      "Save"
+                    )}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+
+          {!rows.length && (
+            <TableRow>
+              <TableCell colSpan={8} align="center">
+                No subscription records found. Create subscription records
+                for registered users first.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 }

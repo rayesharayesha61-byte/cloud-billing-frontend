@@ -78,37 +78,80 @@ function App() {
           element={<Register />}
         />
 
-       
-{/* BUSINESS USER ROUTES */}
-<Route
-  element={
-    <ProtectedRoute>
-      <DashboardLayout />
-    </ProtectedRoute>
-  }
->
-  <Route path="/dashboard" element={<Dashboard />} />
-  <Route path="/products" element={<Products />} />
-  <Route path="/customers" element={<Customers />} />
-  <Route path="/expenses" element={<Expenses />} />
-  <Route path="/invoices" element={<Invoices />} />
-  <Route path="/billing/create" element={<CreateInvoice />} />
-  <Route path="/create-invoice" element={<CreateInvoice />} />
-  <Route path="/reports" element={<Reports />} />
-  <Route path="/subscription" element={<Subscription />} />
-  <Route path="/settings" element={<Settings />} />
-</Route>
-
-{/* SUPER ADMIN ROUTE */}
-<Route
-  path="/admin"
-  element={
-    <ProtectedRoute adminOnly>
-      <AdminPanel />
-    </ProtectedRoute>
-  }
+        {/* ================= PROTECTED APP ================= */}
+ <Route element={<DashboardLayout />}>
+        <Route
+          path="/dashboard"
+          element={<Dashboard />}
+        />
+  <Route
+  path="/products"
+  element={<Products />}
 />
+  <Route path="/customers" element={<Customers />} />
+    <Route path="/expenses" element={<Expenses />} />
+  <Route path="/invoices" element={<Invoices />} />
+        <Route
+          path="/products"
+          element={
+            <ProtectedRoute>
+              <Products />
+            </ProtectedRoute>
+          }
+        />
 
+        <Route
+          path="/customers"
+          element={
+            <ProtectedRoute>
+              <Customers />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/billing/create"
+          element={<CreateInvoice />}
+        />
+
+        <Route
+          path="/create-invoice"
+          element={
+            <ProtectedRoute>
+              <CreateInvoice />
+            </ProtectedRoute>
+          }
+        />
+
+       <Route path="/reports" element={<Reports />} />
+     
+
+
+<Route path="/admin" element={<AdminPanel />} />
+
+// Inside your existing Routes:
+<Route path="/subscription" element={<Subscription />} />
+<Route path="/settings" element={<Settings />} />
+        <Route
+          path="/expenses"
+          element={
+            <ProtectedRoute>
+              <Expenses />
+            </ProtectedRoute>
+          }
+        />
+
+       
+
+      
+
+        {/* UNKNOWN URL */}
+
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
+</Route>
       </Routes>
  
     </BrowserRouter>
