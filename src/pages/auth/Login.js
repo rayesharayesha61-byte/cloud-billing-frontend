@@ -54,69 +54,150 @@ const Login = () => {
 
     setError("");
   };
+  
+
+
 const handleSubmit = async (event) => {
   event.preventDefault();
   setError("");
 
-  if (!form.email.trim()) {
+  const email = form.email.trim().toLowerCase();
+  const password = form.password;
+
+  if (!email) {
     setError("Please enter your email address.");
     return;
   }
 
-  if (!form.password) {
+  if (!password) {
     setError("Please enter your password.");
-    return;
-  }
-
-  // Development-only shortcut.
-  // Production-ல் backend admin authentication பயன்படுத்தவும்.
-  if (
-    form.email.trim().toLowerCase() === "admin@gmail.com" &&
-    form.password === "123456"
-  ) {
-    login({
-      user: {
-        id: "super-admin",
-        email: "admin@gmail.com",
-        role: "super_admin",
-      },
-      role: "super_admin",
-      token: "development-admin-token",
-    });
-
-    navigate("/admin", { replace: true });
     return;
   }
 
   try {
     setLoading(true);
 
-    const data = await loginUser({
-      email: form.email.trim(),
-      password: form.password,
+    // Backend login
+    const response = await loginUser({
+      email,
+      password,
     });
 
+    // Support both response.data and direct response
+    const data = response?.data?.token
+      ? response.data
+      : response;
+
+    if (!data?.token) {
+      throw new Error("Login token not received from server.");
+    }
+
+    if (!data?.user) {
+      throw new Error("User information not received.");
+    }
+
+    const role = String(data.user.role || "")
+      .trim()
+      .toUpperCase();
+
+    // Only admin and super admin can access admin panel
+    if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
+      throw new Error("You do not have admin access.");
+    }
+
+    // Save real backend JWT token
+    localStorage.setItem("token", data.token);
+    localStorage.setItem(
+      "user",
+      JSON.stringify(data.user)
+    );
+
+    // Update AuthContext
     login(data);
 
-    // Backend response-ல் role இருந்தால் அதன்படி redirect செய்யவும்.
-    const role = String(
-      data?.user?.role ?? data?.role ?? ""
-    ).toLowerCase();
+    // Navigate to AdminPanel
+    navigate("/admin", {
+      replace: true,
+    });
 
-    if (role === "super_admin" || role === "admin") {
-      navigate("/admin-dashboard", { replace: true });
-    } else {
-      navigate("/dashboard", { replace: true });
-    }
   } catch (error) {
+    console.error("LOGIN ERROR:", error);
+
     setError(
       error.response?.data?.message ||
-        "Invalid email or password. Please try again."
+      error.message ||
+      "Invalid email or password. Please try again."
     );
   } finally {
     setLoading(false);
   }
 };
+
+
+
+// const handleSubmit = async (event) => {
+//   event.preventDefault();
+//   setError("");
+
+//   if (!form.email.trim()) {
+//     setError("Please enter your email address.");
+//     return;
+//   }
+
+//   if (!form.password) {
+//     setError("Please enter your password.");
+//     return;
+//   }
+
+//   // Development-only shortcut.
+//   // Production-ல் backend admin authentication பயன்படுத்தவும்.
+//   // if (
+//   //   form.email.trim().toLowerCase() === "admin@gmail.com" &&
+//   //   form.password === "123456"
+//   // ) {
+//   //   login({
+//   //     user: {
+//   //       id: "super-admin",
+//   //       email: "admin@gmail.com",
+//   //       role: "super_admin",
+//   //     },
+//   //     role: "super_admin",
+//   //     token: "development-admin-token",
+//   //   });
+
+//   //   navigate("/admin", { replace: true });
+//   //   return;
+//   // }
+
+//   try {
+//     setLoading(true);
+
+//     const data = await loginUser({
+//       email: form.email.trim(),
+//       password: form.password,
+//     });
+
+//     login(data);
+
+//     // Backend response-ல் role இருந்தால் அதன்படி redirect செய்யவும்.
+//     const role = String(
+//       data?.user?.role ?? data?.role ?? ""
+//     ).toLowerCase();
+
+//     if (role === "super_admin" || role === "admin") {
+//       navigate("/admin-dashboard", { replace: true });
+//     } else {
+//       navigate("/dashboard", { replace: true });
+//     }
+//   } catch (error) {
+//     setError(
+//       error.response?.data?.message ||
+//         "Invalid email or password. Please try again."
+//     );
+//   } finally {
+//     setLoading(false);
+//   }
+// };
   // const handleSubmit = async (event) => {
   //   event.preventDefault();
 

@@ -37,6 +37,9 @@ import BusinessDetails from "./pages/BusinessDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Expenses from "./pages/expenses/Expenses";
 import Products from "./pages/products/Products";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+
+
 function App() {
   return (
     <BrowserRouter>
@@ -72,12 +75,16 @@ function App() {
           path="/login"
           element={<Login />}
         />
-
+// Inside Routes
+<Route
+  path="/forgot-password"
+  element={<ForgotPassword />}
+/>
         <Route
           path="/register"
           element={<Register />}
         />
-
+<Route path="/admin" element={<AdminPanel />} />
         {/* ================= PROTECTED APP ================= */}
  <Route element={<DashboardLayout />}>
         <Route
@@ -127,7 +134,7 @@ function App() {
      
 
 
-<Route path="/admin" element={<AdminPanel />} />
+
 
 
 <Route path="/subscription" element={<Subscription />} />
