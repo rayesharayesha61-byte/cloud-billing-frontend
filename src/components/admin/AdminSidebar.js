@@ -131,7 +131,7 @@ import {
   BusinessOutlined as BusinessIcon,
   EventAvailableOutlined as TrialIcon,
   AssessmentOutlined as ReportIcon,
-  HistoryOutlined as HistoryIcon,
+  // HistoryOutlined as HistoryIcon,
   SettingsOutlined as SettingsIcon,
 } from "@mui/icons-material";
 
