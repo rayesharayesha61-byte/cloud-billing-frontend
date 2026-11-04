@@ -143,7 +143,7 @@ export const menuItems = [
   { label: "Manage Plans", icon: <BusinessIcon /> },
   { label: "Trial Management", icon: <TrialIcon /> },
   { label: "Revenue Reports", icon: <ReportIcon /> },
-  { label: "Login Activity", icon: <HistoryIcon /> },
+
   { label: "System Settings", icon: <SettingsIcon /> },
 ];
 

@@ -57,6 +57,7 @@ const Login = () => {
   
 
 
+
 const handleSubmit = async (event) => {
   event.preventDefault();
   setError("");
@@ -77,13 +78,11 @@ const handleSubmit = async (event) => {
   try {
     setLoading(true);
 
-    // Backend login
     const response = await loginUser({
       email,
       password,
     });
 
-    // Support both response.data and direct response
     const data = response?.data?.token
       ? response.data
       : response;
@@ -100,12 +99,7 @@ const handleSubmit = async (event) => {
       .trim()
       .toUpperCase();
 
-    // Only admin and super admin can access admin panel
-    if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
-      throw new Error("You do not have admin access.");
-    }
-
-    // Save real backend JWT token
+    // Save backend JWT token
     localStorage.setItem("token", data.token);
     localStorage.setItem(
       "user",
@@ -115,10 +109,12 @@ const handleSubmit = async (event) => {
     // Update AuthContext
     login(data);
 
-    // Navigate to AdminPanel
-    navigate("/admin", {
-      replace: true,
-    });
+    // Redirect based on role
+    if (role === "ADMIN" || role === "SUPER_ADMIN") {
+      navigate("/admin", { replace: true });
+    } else {
+      navigate("/dashboard", { replace: true });
+    }
 
   } catch (error) {
     console.error("LOGIN ERROR:", error);
@@ -132,6 +128,7 @@ const handleSubmit = async (event) => {
     setLoading(false);
   }
 };
+
 
 
 
